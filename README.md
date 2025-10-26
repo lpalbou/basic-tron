@@ -6,13 +6,13 @@
 
 ## Disclaimer
 
-These days, I have been watching the Tron movies - thanks to a friend who got me to the movie theater to see the recent one. 
+These days, I have been watching the old Tron movies - thanks to a friend who got me to watch [Tron: Ares](https://www.imdb.com/title/tt6604188).
 
-It's interesting how the 1982 movie is much more forward thinking in terms of machines and AI. A discussion that was probably forgotten by many but which is interesting in the current AI revolution / bubble :
+It's interesting how the 1982 movie is so much more forward thinking in terms of machines and AI. A discussion that was probably forgotten by many but which is interesting in the current AI revolution / bubble :
 
 
 > **Alan Bradley:**  
-> I tell you, ever since he got that Master Control Program, system's got more bugs than a bait store.
+> I tell you, ever since he got that **M**aster **C**ontrol **P**rogram, system's got more bugs than a bait store.
 
 (Hi [Claude MCP](https://www.anthropic.com/news/model-context-protocol) !)
 
@@ -27,9 +27,14 @@ It's interesting how the 1982 movie is much more forward thinking in terms of ma
 
 [Tron, 1982](https://www.imdb.com/title/tt0084827)
 
-In any case, I decide to try the vibe coding of a basic tron game with Google AI Studio and this is it. Didn't spend much time, it's more a side side silly project. 
+In any case, I decide to try the Google AI Studio vibe coding for this. Didn't spend much time, it's more a side side silly project. 
 
-## Run and deploy your AI Studio app
+## Quick opinion on Google AI Studio
+Google LLMs (gemini) still have big issues in actually calling tools. Many times I had to remind it that *he thought about a solution* but didn't *implement it* ! I find it surprising that such an app coming from Google wouldn't be more robust. But yes, in the end, you can vibe code with it - just be prepared to some frustration.
+
+PS : for those who know me, I am fascinated by the [Qwen3 next 80b](https://www.qwen3-next.org/) model which is capable to one shot a number of complicated programs - the Tron game as well. I will write about it later, on medium or arxiv.org, but I have gain the certainty that open source actually won the battle of LLMs. OpenAI, Anthropic or Google will just have better ecosystems of solutions and packaging.
+
+## Run and deploy basic-tron
 
 This contains everything you need to run your app locally.
 
