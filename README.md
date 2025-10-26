@@ -14,7 +14,7 @@ It's interesting how the 1982 movie is much more forward thinking in terms of ma
 > **Alan Bradley:**  
 > I tell you, ever since he got that Master Control Program, system's got more bugs than a bait store.
 
-(Hi Claude MCP !)
+(Hi [Claude MCP](https://www.anthropic.com/news/model-context-protocol) !)
 
 > **Dr. Walter Gibbs:**  
 > Gotta expect some static. After all, computers are just machines. They can't think.
@@ -33,7 +33,7 @@ In any case, I decide to try the vibe coding of a basic tron game with Google AI
 
 This contains everything you need to run your app locally.
 
-### run over the web
+### Run on the web
 
 https://www.lpalbou.info/basic-tron/
 
