@@ -5,7 +5,7 @@ let audioContext: AudioContext | null = null;
 let audioBuffer: AudioBuffer | null = null;
 let loadingPromise: Promise<AudioBuffer> | null = null;
 
-const AUDIO_FILE_PATH = 'assets/neon_reverie.mp3';
+const AUDIO_FILE_PATH = './assets/neon_reverie.mp3';
 
 const initAudio = (): Promise<AudioBuffer> => {
   // If buffer is already loaded, return it.
