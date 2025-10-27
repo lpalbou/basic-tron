@@ -384,7 +384,7 @@ const Scene: React.FC<GameCanvasProps> = ({ onGameOver, gameState, speedMultipli
 
 export const GameCanvas: React.FC<GameCanvasProps> = (props) => {
   return (
-    <Canvas shadows camera={{ fov: 60, position: [0, 50, 25] }}>
+    <Canvas shadows camera={{ fov: 60, position: [0, 73, 7] }}>
       <Suspense fallback={null}>
         <Scene {...props} />
       </Suspense>
