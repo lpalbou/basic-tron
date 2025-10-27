@@ -1,3 +1,4 @@
+
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
@@ -36,6 +37,9 @@ export const Trail: React.FC<{ playerRef: React.MutableRefObject<Player> }> = ({
   const lastPathLength = useRef(0);
 
   const { color } = playerRef.current;
+  
+  // Randomize shimmer period for each trail instance for visual variety.
+  const shimmerPeriod = useMemo(() => 1.0 + Math.random() * 2.0, []);
 
   // The material is created once and includes the fade effect and bloom.
   const material = useMemo(() => {
@@ -50,7 +54,7 @@ export const Trail: React.FC<{ playerRef: React.MutableRefObject<Player> }> = ({
     });
   }, [color]);
 
-  useFrame(() => {
+  useFrame((state) => {
     if (!meshRef.current) return;
 
     const player = playerRef.current;
@@ -66,8 +70,25 @@ export const Trail: React.FC<{ playerRef: React.MutableRefObject<Player> }> = ({
     const { path, activePowerUp } = player;
     
     const powerUpIsActive = activePowerUp.type === 'SPEED_BOOST' || activePowerUp.type === 'INVINCIBILITY';
-    material.emissiveIntensity = powerUpIsActive ? 10 : 6;
     
+    // Shimmer effect for intensity and opacity
+    const angularFrequency = (2 * Math.PI) / shimmerPeriod;
+    const sinValue = Math.sin(state.clock.elapsedTime * angularFrequency);
+    const normalizedSine = (sinValue + 1) / 2; // maps sinValue from [-1, 1] to [0, 1]
+
+    // Vary emissive intensity to be between 40% and 80% of the base intensity
+    const baseIntensity = powerUpIsActive ? 10 : 6;
+    const minIntensityFactor = 0.4;
+    const maxIntensityFactor = 0.8;
+    const intensityFactor = minIntensityFactor + normalizedSine * (maxIntensityFactor - minIntensityFactor);
+    material.emissiveIntensity = baseIntensity * intensityFactor;
+
+    // Vary opacity along with the shimmer
+    // Map normalizedSine to an opacity range of [0.4, 0.7]
+    const minOpacity = 0.4;
+    const maxOpacity = 0.7;
+    material.opacity = minOpacity + normalizedSine * (maxOpacity - minOpacity);
+
     let currentColor = player.color;
     if (activePowerUp.type === 'INVINCIBILITY') {
         currentColor = POWERUP_INVINCIBILITY_COLOR;

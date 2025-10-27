@@ -1,3 +1,4 @@
+import type useSoundEffects from './hooks/useSoundEffects';
 
 export type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
@@ -33,3 +34,7 @@ export type CameraState = {
 };
 
 export type CameraView = 'THIRD_PERSON' | 'FOLLOW' | 'FIRST_PERSON';
+
+export type DeviceType = 'desktop' | 'phone' | 'tablet';
+
+export type SfxControls = ReturnType<typeof useSoundEffects>;

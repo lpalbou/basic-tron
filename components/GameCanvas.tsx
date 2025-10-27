@@ -1,10 +1,13 @@
+
 import React, { useRef, Suspense, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Noise } from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
+import { Vector3 } from 'three';
 import { Arena } from './Arena';
 import { LightCycle } from './LightCycle';
 import { Trail } from './Trail';
-import type { Player, Direction, GameState, CameraState, PowerUp as PowerUpType, CameraView } from '../types';
+import type { Player, Direction, GameState, CameraState, PowerUp as PowerUpType, CameraView, SfxControls } from '../types';
 import { 
   INITIAL_PLAYER_1_STATE, 
   INITIAL_PLAYER_2_STATE, 
@@ -16,10 +19,13 @@ import {
   POWERUP_SPEED_MULTIPLIER,
   TRAIL_SHRINK_PERCENTAGE,
 } from '../constants';
-import { CrashParticles } from './CrashParticles';
 import { PowerUp } from './PowerUp';
 import { ParticleTrail } from './ParticleTrail';
 import { DynamicCamera } from './DynamicCamera';
+import { DistantData } from './DigitalDust';
+import { WallSparks } from './WallSparks';
+import { TrailSparks } from './TrailSparks';
+import { SfxKey } from '../hooks/useSoundEffects';
 
 interface GameCanvasProps {
   onGameOver: (winner: number | null) => void;
@@ -28,23 +34,19 @@ interface GameCanvasProps {
   savedCameraState: CameraState;
   onCameraChange: (newState: CameraState) => void;
   cameraView: CameraView;
-}
-
-interface CrashEvent {
-  id: number;
-  position: [number, number, number];
-  color: string;
+  sfx: SfxControls;
+  scores: { player1: number; player2: number };
 }
 
 interface GameLoopProps {
   player1Ref: React.MutableRefObject<Player>;
   player2Ref: React.MutableRefObject<Player>;
   onGameOver: (winner: number | null) => void;
-  onCrash: (crashData: Omit<CrashEvent, 'id'>) => void;
   gameState: GameState;
   speedMultiplier: number;
   powerUps: PowerUpType[];
   setPowerUps: React.Dispatch<React.SetStateAction<PowerUpType[]>>;
+  sfx: SfxControls;
 }
 
 // --- AI and Collision Helper Functions ---
@@ -77,7 +79,7 @@ const isSafe = (pos: [number, number, number], collision: Set<string>, player: P
 };
 // --- End AI Helpers ---
 
-const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver, onCrash, gameState, speedMultiplier, powerUps, setPowerUps }) => {
+const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver, gameState, speedMultiplier, powerUps, setPowerUps, sfx }) => {
   const p1TimeAccumulator = useRef(0);
   const p2TimeAccumulator = useRef(0);
   const powerUpSpawnTimer = useRef(POWERUP_SPAWN_INTERVAL / 2);
@@ -113,6 +115,75 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
 
   useFrame((_, delta) => {
     if (gameOverRef.current || gameState !== 'PLAYING') return;
+    
+    const p1 = player1Ref.current;
+    const p2 = player2Ref.current;
+
+    // --- Wall Proximity Sound ---
+    const [x, , z] = p1.position;
+    const halfGrid = GRID_SIZE / 2;
+    const dists = [x + halfGrid, halfGrid - x, z + halfGrid, halfGrid - z];
+    sfx.updateWallProximityVolume(Math.min(...dists));
+
+    // --- Trail Proximity Effects ---
+    const px = Math.round(p1.position[0]);
+    const pz = Math.round(p1.position[2]);
+    const opx = Math.round(p2.position[0]);
+    const opz = Math.round(p2.position[2]);
+    const prevPos = p1.path.length > 1 ? p1.path[p1.path.length - 2] : null;
+    const prev_px = prevPos ? Math.round(prevPos[0]) : -Infinity;
+    const prev_pz = prevPos ? Math.round(prevPos[2]) : -Infinity;
+
+    let minTrailDist = Infinity;
+    let closestTrailPoint: { x: number; z: number } | null = null;
+    const searchRadius = 3; // Scan a 7x7 grid (3 unit radius)
+
+    for (let i = -searchRadius; i <= searchRadius; i++) {
+        for (let j = -searchRadius; j <= searchRadius; j++) {
+            if (i === 0 && j === 0) continue; // Skip player's own cell
+            const nx = px + i;
+            const nz = pz + j;
+
+            const key = `${nx},${nz}`;
+            // Exclude player's recent trail and opponent's head
+            if (key === `${prev_px},${prev_pz}` || key === `${opx},${opz}`) continue;
+
+            if (collisionGrid.current.has(key)) {
+                // Calculate distance from actual player position to the center of the grid cell
+                const dist = Math.hypot(p1.position[0] - nx, p1.position[2] - nz);
+                if (dist < minTrailDist) {
+                    minTrailDist = dist;
+                    closestTrailPoint = { x: nx, z: nz };
+                }
+            }
+        }
+    }
+
+    // Update Volume based on the calculated distance
+    sfx.updateTrailProximityVolume(minTrailDist);
+
+    // Trigger visual effects (sparks, shake) only when extremely close
+    if (minTrailDist <= 1.1 && closestTrailPoint) {
+        const trailPointVec = new Vector3(closestTrailPoint.x, 0.5, closestTrailPoint.z);
+        const playerPoint = new Vector3(p1.position[0], 0.5, p1.position[2]);
+        
+        const trailOwner = p2.path.some(p => Math.round(p[0]) === closestTrailPoint!.x && Math.round(p[2]) === closestTrailPoint!.z) ? p2 : p1;
+        
+        const sparkPosition = new Vector3().lerpVectors(trailPointVec, playerPoint, 0.5);
+        const sparkNormal = new Vector3().subVectors(playerPoint, trailPointVec).normalize();
+
+        window.dispatchEvent(new CustomEvent('trail-proximity', {
+            detail: {
+                proximity: 1.0, // For shake intensity
+                sparkPosition: sparkPosition.toArray(),
+                sparkNormal: sparkNormal.toArray(),
+                trailColor: trailOwner.color,
+            }
+        }));
+    } else {
+        // Dispatch event to stop camera shake when not close
+        window.dispatchEvent(new CustomEvent('trail-proximity', { detail: { proximity: 0 } }));
+    }
 
     // --- Power-up Spawning ---
     powerUpSpawnTimer.current -= delta;
@@ -128,12 +199,10 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
     }
 
     // --- Update Player Power-up Durations ---
-    const p1 = player1Ref.current;
     if (p1.activePowerUp.duration > 0) {
         p1.activePowerUp.duration -= delta;
         if (p1.activePowerUp.duration <= 0) p1.activePowerUp = { type: null, duration: 0 };
     }
-    const p2 = player2Ref.current;
     if (p2.activePowerUp.duration > 0) {
         p2.activePowerUp.duration -= delta;
         if (p2.activePowerUp.duration <= 0) p2.activePowerUp = { type: null, duration: 0 };
@@ -151,13 +220,10 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
 
     let p1Moved = false;
     let p2Moved = false;
-
-    // Player 1 direction is now updated by the input handler in the Scene component.
     
     // Player 2 (AI) direction logic.
     if (p2.isAlive) {
         let movedForPowerUp = false;
-        // AI Power-up seeking logic
         if (powerUps.length > 0) {
             let closestPowerUp = null;
             let minDistance = Infinity;
@@ -168,18 +234,12 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
                     closestPowerUp = p;
                 }
             }
-
             if (closestPowerUp && minDistance < 15) {
                 const dx = closestPowerUp.position[0] - p2.position[0];
                 const dz = closestPowerUp.position[2] - p2.position[2];
                 let desiredDir: Direction | null = null;
-                
-                if (Math.abs(dx) > Math.abs(dz)) {
-                    desiredDir = dx > 0 ? 'RIGHT' : 'LEFT';
-                } else {
-                    desiredDir = dz > 0 ? 'DOWN' : 'UP';
-                }
-
+                if (Math.abs(dx) > Math.abs(dz)) { desiredDir = dx > 0 ? 'RIGHT' : 'LEFT'; }
+                else { desiredDir = dz > 0 ? 'DOWN' : 'UP'; }
                 const isOpposite = (p2.direction === 'UP' && desiredDir === 'DOWN') || (p2.direction === 'DOWN' && desiredDir === 'UP') || (p2.direction === 'LEFT' && desiredDir === 'RIGHT') || (p2.direction === 'RIGHT' && desiredDir === 'LEFT');
                 if (desiredDir && !isOpposite) {
                     const nextPos = calculateNextPos(p2.position, desiredDir);
@@ -191,8 +251,6 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
                 }
             }
         }
-        
-        // Defensive AI logic (if not seeking a power-up)
         if (!movedForPowerUp) {
             const futureCollisionGrid = new Set<string>(collisionGrid.current);
             if (p1.isAlive) {
@@ -200,17 +258,14 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
                 futureCollisionGrid.add(`${p1.position[0]},${p1.position[2]}`);
                 futureCollisionGrid.add(`${p1NextPosForAI[0]},${p1NextPosForAI[2]}`);
             }
-            
             const forwardPos = calculateNextPos(p2.position, p2.direction);
             if (!isSafe(forwardPos, futureCollisionGrid, p2)) {
                 const leftDir = getTurnedDirection(p2.direction, 'LEFT');
                 const leftPos = calculateNextPos(p2.position, leftDir);
                 const rightDir = getTurnedDirection(p2.direction, 'RIGHT');
                 const rightPos = calculateNextPos(p2.position, rightDir);
-
                 const canGoLeft = isSafe(leftPos, futureCollisionGrid, p2);
                 const canGoRight = isSafe(rightPos, futureCollisionGrid, p2);
-
                 if (canGoLeft && canGoRight) p2.direction = Math.random() > 0.5 ? leftDir : rightDir;
                 else if (canGoLeft) p2.direction = leftDir;
                 else if (canGoRight) p2.direction = rightDir;
@@ -218,14 +273,8 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
         }
     }
 
-    if (p1.isAlive && p1TimeAccumulator.current >= p1TimeStep) {
-        p1TimeAccumulator.current -= p1TimeStep;
-        p1Moved = true;
-    }
-    if (p2.isAlive && p2TimeAccumulator.current >= p2TimeStep) {
-        p2TimeAccumulator.current -= p2TimeStep;
-        p2Moved = true;
-    }
+    if (p1.isAlive && p1TimeAccumulator.current >= p1TimeStep) { p1TimeAccumulator.current -= p1TimeStep; p1Moved = true; }
+    if (p2.isAlive && p2TimeAccumulator.current >= p2TimeStep) { p2TimeAccumulator.current -= p2TimeStep; p2Moved = true; }
 
     if (!p1Moved && !p2Moved) return;
     
@@ -237,11 +286,24 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
         const collected = powerUps.find(p => Math.hypot(p.position[0] - nextPos[0], p.position[2] - nextPos[2]) <= 1.0);
         if (collected) {
             setPowerUps(prev => prev.filter(p => p.id !== collected.id));
+            if (collector.id === 1) { // Only play sounds for the user
+                switch (collected.type) {
+                    case 'INVINCIBILITY':
+                        sfx.playSound('invincible');
+                        break;
+                    case 'TRAIL_SHRINK':
+                        sfx.playSound('trailShrink');
+                        break;
+                    case 'SPEED_BOOST':
+                        sfx.playSound('invincible', { volume: 0.8 });
+                        break;
+                }
+            }
             if (collected.type === 'TRAIL_SHRINK') {
                 const amount = Math.floor(opponent.path.length * TRAIL_SHRINK_PERCENTAGE);
                 if (amount > 0) {
                     const removed = opponent.path.splice(0, amount);
-                    removed.forEach(point => collisionGrid.current.delete(`${point[0]},${point[2]}`));
+                    removed.forEach(point => collisionGrid.current.delete(`${Math.round(point[0])},${Math.round(point[2])}`));
                     opponent.trailJustShrank = true;
                 }
             } else {
@@ -255,24 +317,38 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
     // --- Collision Detection ---
     let p1Crashed = false;
     let p2Crashed = false;
+    let p1CrashSound: SfxKey | null = null;
+    
+    const isWallCollision = (pos: [number, number, number]): boolean => {
+        const [x_pos, , z_pos] = pos;
+        const hg = GRID_SIZE / 2;
+        return x_pos <= -hg || x_pos >= hg || z_pos <= -hg || z_pos >= hg;
+    };
+    const isTrailCollision = (pos: [number, number, number], grid: Set<string>): boolean => {
+        const [x_pos, , z_pos] = pos;
+        return grid.has(`${Math.round(x_pos)},${Math.round(z_pos)}`);
+    };
 
     if (p1Moved && p1.isAlive) {
-        if (!isSafe(p1NextPos, collisionGrid.current, p1)) p1Crashed = true;
+        if (isWallCollision(p1NextPos)) {
+            p1Crashed = true;
+            p1CrashSound = 'crashWall';
+        } else if (p1.activePowerUp.type !== 'INVINCIBILITY' && isTrailCollision(p1NextPos, collisionGrid.current)) {
+            p1Crashed = true;
+            p1CrashSound = 'crashBike';
+        }
     }
     if (p2Moved && p2.isAlive) {
         if (!isSafe(p2NextPos, collisionGrid.current, p2)) p2Crashed = true;
     }
-
     if (p1.isAlive && p2.isAlive) {
-        const p1NextKey = `${p1NextPos[0]},${p1NextPos[2]}`;
-        const p2NextKey = `${p2NextPos[0]},${p2NextPos[2]}`;
+        const p1NextKey = `${Math.round(p1NextPos[0])},${Math.round(p1NextPos[2])}`;
+        const p2NextKey = `${Math.round(p2NextPos[0])},${Math.round(p2NextPos[2])}`;
         if (p1Moved && p2Moved) {
-            if (p1NextKey === p2NextKey) p1Crashed = p2Crashed = true;
-            if (p1NextKey === `${p2.position[0]},${p2.position[2]}` && p2NextKey === `${p1.position[0]},${p1.position[2]}`) p1Crashed = p2Crashed = true;
+            if (p1NextKey === p2NextKey) { p1Crashed = p2Crashed = true; if (!p1CrashSound) p1CrashSound = 'crashBike'; }
+            if (p1NextKey === `${Math.round(p2.position[0])},${Math.round(p2.position[2])}` && p2NextKey === `${Math.round(p1.position[0])},${Math.round(p1.position[2])}`) { p1Crashed = p2Crashed = true; if (!p1CrashSound) p1CrashSound = 'crashBike'; }
         } else if (p1Moved) {
-            if (p1NextKey === `${p2.position[0]},${p2.position[2]}`) p1Crashed = true;
-        } else if (p2Moved) {
-            if (p2NextKey === `${p1.position[0]},${p1.position[2]}`) p2Crashed = true;
+            if (p1NextKey === `${Math.round(p2.position[0])},${Math.round(p2.position[2])}`) { p1Crashed = true; if (!p1CrashSound) p1CrashSound = 'crashBike'; }
         }
     }
     
@@ -280,8 +356,12 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
     if (p1Crashed || p2Crashed) {
       if (gameOverRef.current) return;
       gameOverRef.current = true;
-      if (p1Crashed) { p1.isAlive = false; onCrash({ position: p1NextPos, color: p1.color }); }
-      if (p2Crashed) { p2.isAlive = false; onCrash({ position: p2NextPos, color: p2.color }); }
+      if (p1Crashed) { // Only dispatch events/sounds for the user's crash
+        window.dispatchEvent(new CustomEvent('camera-shake', { detail: { intensity: 0.4, duration: 0.5 } }));
+        if (p1CrashSound) sfx.playSound(p1CrashSound);
+      }
+      if (p1Crashed) p1.isAlive = false;
+      if (p2Crashed) p2.isAlive = false;
       if (!p1.isAlive && !p2.isAlive) onGameOver(null);
       else if (!p1.isAlive) onGameOver(2);
       else onGameOver(1);
@@ -290,12 +370,12 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
 
     // --- Update Positions & Trails ---
     if (p1Moved && p1.isAlive) {
-      collisionGrid.current.add(`${p1.position[0]},${p1.position[2]}`);
+      collisionGrid.current.add(`${Math.round(p1.position[0])},${Math.round(p1.position[2])}`);
       p1.position = p1NextPos;
       p1.path.push(p1NextPos);
     }
     if (p2Moved && p2.isAlive) {
-      collisionGrid.current.add(`${p2.position[0]},${p2.position[2]}`);
+      collisionGrid.current.add(`${Math.round(p2.position[0])},${Math.round(p2.position[2])}`);
       p2.position = p2NextPos;
       p2.path.push(p2NextPos);
     }
@@ -311,18 +391,46 @@ const Scene: React.FC<GameCanvasProps> = ({
     savedCameraState, 
     onCameraChange, 
     cameraView,
+    sfx,
+    scores,
 }) => {
-  const [crashes, setCrashes] = useState<CrashEvent[]>([]);
   const [powerUps, setPowerUps] = useState<PowerUpType[]>([]);
+  const [isInvincible, setIsInvincible] = useState(false);
 
   const player1Ref = useRef<Player>(JSON.parse(JSON.stringify(INITIAL_PLAYER_1_STATE)));
   const player2Ref = useRef<Player>(JSON.parse(JSON.stringify(INITIAL_PLAYER_2_STATE)));
+
+  useFrame(() => {
+    const p1 = player1Ref.current;
+    if (p1) {
+      const shouldBeInvincible = p1.activePowerUp.type === 'INVINCIBILITY' && p1.isAlive;
+      if (shouldBeInvincible !== isInvincible) {
+        setIsInvincible(shouldBeInvincible);
+      }
+    }
+  });
   
+  // Start/stop proximity sound with game state
+  useEffect(() => {
+    if (gameState === 'PLAYING') {
+      sfx.startWallProximitySound();
+      sfx.startTrailProximitySound();
+    } else {
+      sfx.stopWallProximitySound();
+      sfx.stopTrailProximitySound();
+    }
+    return () => { 
+        sfx.stopWallProximitySound();
+        sfx.stopTrailProximitySound();
+    };
+  }, [gameState, sfx]);
+
   // --- Simplified Input Handler (listens for custom events from App.tsx) ---
   useEffect(() => {
     const handlePlayerInput = (e: Event) => {
       const { detail } = e as CustomEvent;
       const p1 = player1Ref.current;
+      const oldDirection = p1.direction;
 
       const handleKeyEvent = (key: string) => {
         if (cameraView === 'FIRST_PERSON' || cameraView === 'FOLLOW') {
@@ -358,27 +466,22 @@ const Scene: React.FC<GameCanvasProps> = ({
           if (!isOpposite) p1.direction = newDirection;
         }
       }
+
+      if (p1.direction !== oldDirection) {
+        sfx.playSound('turn');
+      }
     };
     
     window.addEventListener('player-input', handlePlayerInput);
     return () => {
       window.removeEventListener('player-input', handlePlayerInput);
     };
-  }, [cameraView]);
-
-
-  const handleCrash = useCallback((crashData: Omit<CrashEvent, 'id'>) => {
-    setCrashes(currentCrashes => [
-      ...currentCrashes,
-      { ...crashData, id: Date.now() + Math.random() }
-    ]);
-  }, []);
+  }, [cameraView, sfx]);
   
   useEffect(() => {
     if (gameState === 'COUNTDOWN') {
       player1Ref.current = JSON.parse(JSON.stringify(INITIAL_PLAYER_1_STATE));
       player2Ref.current = JSON.parse(JSON.stringify(INITIAL_PLAYER_2_STATE));
-      setCrashes([]);
       setPowerUps([]);
     }
   }, [gameState]);
@@ -386,33 +489,31 @@ const Scene: React.FC<GameCanvasProps> = ({
 
   return (
     <>
-      <fog attach="fog" args={['#000', 40, 100]} />
       <ambientLight intensity={0.1} />
       <hemisphereLight intensity={0.5} color="#00ffff" groundColor="#ff5500" />
-      <Arena gridSize={GRID_SIZE} />
+      <Arena gridSize={GRID_SIZE} scores={scores} />
+      <DistantData />
       
       <GameLoop 
         player1Ref={player1Ref}
         player2Ref={player2Ref}
         onGameOver={onGameOver} 
-        onCrash={handleCrash} 
         gameState={gameState} 
         speedMultiplier={speedMultiplier} 
         powerUps={powerUps}
         setPowerUps={setPowerUps}
+        sfx={sfx}
       />
       
       <LightCycle player={player1Ref} gameState={gameState} />
       <Trail playerRef={player1Ref} />
       <ParticleTrail playerRef={player1Ref} gameState={gameState} />
+      <WallSparks playerRef={player1Ref} />
+      <TrailSparks />
       
       <LightCycle player={player2Ref} gameState={gameState} />
       <Trail playerRef={player2Ref} />
       <ParticleTrail playerRef={player2Ref} gameState={gameState} />
-      
-      {crashes.map(crash => (
-        <CrashParticles key={crash.id} position={crash.position} color={crash.color} />
-      ))}
 
       {powerUps.map(p => (
         <PowerUp key={p.id} type={p.type} position={p.position} />
@@ -428,6 +529,11 @@ const Scene: React.FC<GameCanvasProps> = ({
 
       <EffectComposer>
         <Bloom intensity={1.5} luminanceThreshold={0.25} luminanceSmoothing={0.9} height={1080} />
+        <Noise
+          premultiply
+          opacity={isInvincible ? 0.15 : 0}
+          blendFunction={BlendFunction.ADD}
+        />
       </EffectComposer>
     </>
   );

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { GameState } from '../types';
 import { MenuScreen } from './MenuScreen';
@@ -10,42 +11,9 @@ interface UIProps {
   scores: { player1: number; player2: number };
 }
 
-const CountdownDisplay: React.FC = () => {
-    const [count, setCount] = React.useState(3);
-
-    React.useEffect(() => {
-        setCount(3);
-        const t1 = setTimeout(() => setCount(2), 666);
-        const t2 = setTimeout(() => setCount(1), 1333);
-        return () => {
-            clearTimeout(t1);
-            clearTimeout(t2);
-        }
-    }, []);
-
-    return (
-        <div 
-          key={count} 
-          className="text-9xl font-black text-white animate-pulse"
-          style={{
-              textShadow: '0 0 20px white, 0 0 40px white',
-              animationDuration: '0.66s'
-          }}
-        >
-            {count}
-        </div>
-    );
-}
-
 export const UI: React.FC<UIProps> = ({ gameState, winner, onStart, scores }) => {
-  if (gameState === 'PLAYING' || gameState === 'CRASHED') return null;
-
-  if (gameState === 'COUNTDOWN') {
-    return (
-      <div className="absolute inset-0 z-10 flex items-center justify-center bg-black bg-opacity-50 pointer-events-none">
-        <CountdownDisplay />
-      </div>
-    );
+  if (gameState === 'PLAYING' || gameState === 'CRASHED' || gameState === 'COUNTDOWN') {
+    return null;
   }
 
   if (gameState === 'PAUSED') {

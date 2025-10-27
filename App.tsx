@@ -2,14 +2,25 @@
 import React from 'react';
 import { GameCanvas } from './components/GameCanvas';
 import { UI } from './components/UI';
-import type { GameState, CameraState, CameraView, Direction } from './types';
+import type { GameState, CameraState, CameraView, Direction, DeviceType } from './types';
 import useSounds from './hooks/useSounds';
-import useIsMobile from './hooks/useIsMobile';
+import useSoundEffects from './hooks/useSoundEffects';
 import { OnScreenControls } from './components/OnScreenControls';
 import useOrientation from './hooks/useOrientation';
 import { OrientationLock } from './components/OrientationLock';
 import { SpeedIndicator } from './components/SpeedIndicator';
 import { PauseButton } from './components/PauseButton';
+
+const getDeviceType = (): DeviceType => {
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (!hasTouch) return 'desktop';
+    // Use a media query, which is more robust for detecting device characteristics
+    if (window.matchMedia('(min-width: 768px)').matches) {
+        return 'tablet';
+    }
+    return 'phone';
+};
+
 
 const App: React.FC = () => {
   const [gameState, setGameState] = React.useState<GameState>('MENU');
@@ -26,16 +37,26 @@ const App: React.FC = () => {
   });
   const [cameraView, setCameraView] = React.useState<CameraView>('THIRD_PERSON');
   
-  const isMobile = useIsMobile();
+  const [deviceType, setDeviceType] = React.useState<DeviceType>('desktop');
   const orientation = useOrientation();
   const { playBackgroundMusic, pauseMusic, resumeMusic } = useSounds();
+  const sfx = useSoundEffects();
   const [showControls, setShowControls] = React.useState(false);
 
   React.useEffect(() => {
-    setShowControls(isMobile);
-  }, [isMobile]);
+    const updateDevice = () => setDeviceType(getDeviceType());
+    updateDevice();
+    window.addEventListener('resize', updateDevice);
+    return () => window.removeEventListener('resize', updateDevice);
+  }, []);
 
-  const startGame = React.useCallback(async () => {
+  const isTouchDevice = deviceType === 'phone' || deviceType === 'tablet';
+
+  React.useEffect(() => {
+    setShowControls(isTouchDevice);
+  }, [isTouchDevice]);
+
+  const startGame = React. useCallback(async () => {
     await playBackgroundMusic();
     setWinner(null);
     setGameState('COUNTDOWN');
@@ -141,9 +162,9 @@ const App: React.FC = () => {
     setGameState('CRASHED');
     setWinner(winnerId);
     if (winnerId === 1) {
-      setScores(s => ({ ...s, player1: s.player1 + 1 }));
+      setScores(s => s ? ({ ...s, player1: s.player1 + 1 }) : { player1: 1, player2: 0 });
     } else if (winnerId === 2) {
-      setScores(s => ({ ...s, player2: s.player2 + 1 }));
+      setScores(s => s ? ({ ...s, player2: s.player2 + 1 }) : { player1: 0, player2: 1 });
     }
   }, []);
 
@@ -151,7 +172,7 @@ const App: React.FC = () => {
     setThirdPersonCameraState(newState);
   }, []);
 
-  if (isMobile && orientation === 'portrait') {
+  if (isTouchDevice && orientation === 'portrait') {
     return <OrientationLock />;
   }
 
@@ -173,10 +194,12 @@ const App: React.FC = () => {
           savedCameraState={thirdPersonCameraState}
           onCameraChange={handleCameraChange}
           cameraView={cameraView}
+          sfx={sfx}
+          scores={scores}
         />
       )}
       {showControls && (gameState === 'PLAYING' || gameState === 'COUNTDOWN' || gameState === 'PAUSED') && (
-        <OnScreenControls />
+        <OnScreenControls deviceType={deviceType} />
       )}
       {(gameState === 'PLAYING' || gameState === 'PAUSED') && (
         <PauseButton gameState={gameState} />

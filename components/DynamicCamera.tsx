@@ -1,7 +1,8 @@
-import React, { useRef, useCallback, useLayoutEffect } from 'react';
+
+import React, { useRef, useCallback, useLayoutEffect, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { Vector3, Euler } from 'three';
+import { Vector3, Euler, MathUtils } from 'three';
 import type { Player, CameraView, CameraState, Direction, GameState } from '../types';
 
 interface DynamicCameraProps {
@@ -70,47 +71,106 @@ export const DynamicCamera: React.FC<DynamicCameraProps> = ({
   const smoothPos = useRef(new Vector3(...playerRef.current.position));
   const smoothRot = useRef(new Euler(0, directionToRotation.get(playerRef.current.direction) ?? 0, 0));
 
-  useFrame(() => {
-    if (cameraView === 'THIRD_PERSON') {
-      return; 
+  // --- Camera Shake State ---
+  const shakeIntensity = useRef(0);
+  const shakeDuration = useRef(0);
+  const initialShakeDuration = useRef(1);
+  const time = useRef(0);
+  const trailShakeIntensity = useRef(0);
+
+  // --- Event Listeners for Shake ---
+  useEffect(() => {
+    const handleCameraShake = (e: Event) => {
+      const { detail } = e as CustomEvent;
+      shakeIntensity.current = detail.intensity ?? 0.5;
+      shakeDuration.current = detail.duration ?? 0.5;
+      initialShakeDuration.current = detail.duration ?? 0.5;
+    };
+    
+    const handleTrailProximity = (e: Event) => {
+        const { detail } = e as CustomEvent;
+        trailShakeIntensity.current = detail.proximity > 0 ? 0.03 : 0;
+    };
+
+    window.addEventListener('camera-shake', handleCameraShake);
+    window.addEventListener('trail-proximity', handleTrailProximity);
+    return () => {
+      window.removeEventListener('camera-shake', handleCameraShake);
+      window.removeEventListener('trail-proximity', handleTrailProximity);
+    };
+  }, []);
+
+  useFrame((state, delta) => {
+    time.current = state.clock.elapsedTime;
+    
+    if (cameraView !== 'THIRD_PERSON') {
+      const p = playerRef.current;
+      
+      const targetPosition = new Vector3(...p.position);
+      smoothPos.current.lerp(targetPosition, 0.4);
+
+      const targetRotationY = directionToRotation.get(p.direction) ?? 0;
+      let rotDiff = targetRotationY - smoothRot.current.y;
+      while (rotDiff > Math.PI) rotDiff -= 2 * Math.PI;
+      while (rotDiff < -Math.PI) rotDiff += 2 * Math.PI;
+      smoothRot.current.y += rotDiff * 0.3;
+      
+      if (gameState === 'PAUSED') return;
+
+      if (cameraView === 'FIRST_PERSON') {
+        // Moved camera further forward (from -2.5 to -4.5) to prevent clipping into the longer bike model.
+        // Also slightly raised it for a better view over the front wheel arch.
+        const cameraOffset = new Vector3(0, 0.8, -4.5);
+        cameraOffset.applyEuler(smoothRot.current);
+        camera.position.copy(smoothPos.current).add(cameraOffset);
+
+        // Look slightly further ahead for a better sense of speed.
+        const lookAtOffset = new Vector3(0, 0.5, -15);
+        lookAtOffset.applyEuler(smoothRot.current);
+        camera.lookAt(smoothPos.current.clone().add(lookAtOffset));
+
+      } else { // FOLLOW mode - New "Chase Cam" logic
+        // Shift camera to the right and position it behind and above
+        const cameraOffset = new Vector3(2.5, 6, 12); // x=2.5 is half the previous offset
+        cameraOffset.applyEuler(smoothRot.current);
+        camera.position.copy(smoothPos.current).add(cameraOffset);
+
+        // Target a point well in front of the bike for a proactive chase-cam feel
+        const lookAtOffset = new Vector3(0, 2, -15); // Look slightly up and far ahead
+        lookAtOffset.applyEuler(smoothRot.current);
+        const lookAtPosition = smoothPos.current.clone().add(lookAtOffset);
+        camera.lookAt(lookAtPosition);
+      }
     }
 
+    // --- Apply Camera Shake ---
+    let currentShake = 0;
+
+    // 1. Crash/Event Shake
+    if (shakeDuration.current > 0) {
+        // Falloff shake intensity over duration
+        const falloff = Math.pow(shakeDuration.current / initialShakeDuration.current, 2);
+        currentShake = shakeIntensity.current * falloff;
+        shakeDuration.current -= delta;
+    }
+
+    // 2. Speed Boost Shake (additive)
     const p = playerRef.current;
-    
-    const targetPosition = new Vector3(...p.position);
-    smoothPos.current.lerp(targetPosition, 0.4);
+    if (p.isAlive && p.activePowerUp.type === 'SPEED_BOOST') {
+        // A subtle, high-frequency vibration
+        const boostShake = 0.04;
+        currentShake += (boostShake * (Math.sin(time.current * 50) + Math.sin(time.current * 70))) / 2;
+    }
 
-    const targetRotationY = directionToRotation.get(p.direction) ?? 0;
-    let rotDiff = targetRotationY - smoothRot.current.y;
-    while (rotDiff > Math.PI) rotDiff -= 2 * Math.PI;
-    while (rotDiff < -Math.PI) rotDiff += 2 * Math.PI;
-    smoothRot.current.y += rotDiff * 0.3;
-    
-    if (gameState === 'PAUSED') return;
+    // 3. Trail Proximity Shake (additive)
+    if (trailShakeIntensity.current > 0) {
+        currentShake += (trailShakeIntensity.current * (Math.sin(time.current * 60) + Math.sin(time.current * 80))) / 2;
+    }
 
-    if (cameraView === 'FIRST_PERSON') {
-      // Moved camera further forward (from -2.5 to -4.5) to prevent clipping into the longer bike model.
-      // Also slightly raised it for a better view over the front wheel arch.
-      const cameraOffset = new Vector3(0, 0.8, -4.5);
-      cameraOffset.applyEuler(smoothRot.current);
-      camera.position.copy(smoothPos.current).add(cameraOffset);
-
-      // Look slightly further ahead for a better sense of speed.
-      const lookAtOffset = new Vector3(0, 0.5, -15);
-      lookAtOffset.applyEuler(smoothRot.current);
-      camera.lookAt(smoothPos.current.clone().add(lookAtOffset));
-
-    } else { // FOLLOW mode - New "Chase Cam" logic
-      // Shift camera to the right and position it behind and above
-      const cameraOffset = new Vector3(2.5, 6, 12); // x=2.5 is half the previous offset
-      cameraOffset.applyEuler(smoothRot.current);
-      camera.position.copy(smoothPos.current).add(cameraOffset);
-
-      // Target a point well in front of the bike for a proactive chase-cam feel
-      const lookAtOffset = new Vector3(0, 2, -15); // Look slightly up and far ahead
-      lookAtOffset.applyEuler(smoothRot.current);
-      const lookAtPosition = smoothPos.current.clone().add(lookAtOffset);
-      camera.lookAt(lookAtPosition);
+    if (currentShake > 0) {
+        camera.position.x += MathUtils.randFloatSpread(currentShake);
+        camera.position.y += MathUtils.randFloatSpread(currentShake);
+        camera.position.z += MathUtils.randFloatSpread(currentShake);
     }
   });
 
