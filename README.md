@@ -43,6 +43,10 @@ PS : for those who know me, I am fascinated by the [Qwen3 next 80b](https://www.
 
 The background music [Neon Reverie](assets/neon_reverie.mp3) was created with [Suno](https://suno.com/s/YL4CceFyzxQp2e9e) using the simple prompt: "electronic, dynamic music based on Tron movies and universe".
 
+## Sound Effects
+
+The few sound effects were generated with [ElevenLabs Text-to-sound-effects](https://elevenlabs.io/sound-effects).
+
 ## Run and deploy basic-tron
 
 This contains everything you need to run your app locally.
