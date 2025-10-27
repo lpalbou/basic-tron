@@ -1,12 +1,11 @@
+
 import React, { useRef, Suspense, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { Arena } from './Arena';
 import { LightCycle } from './LightCycle';
 import { Trail } from './Trail';
-import { useControls } from '../hooks/useControls';
-import type { Player, Direction, GameState, CameraState, PowerUp as PowerUpType } from '../types';
+import type { Player, Direction, GameState, CameraState, PowerUp as PowerUpType, CameraView } from '../types';
 import { 
   INITIAL_PLAYER_1_STATE, 
   INITIAL_PLAYER_2_STATE, 
@@ -21,13 +20,15 @@ import {
 import { CrashParticles } from './CrashParticles';
 import { PowerUp } from './PowerUp';
 import { ParticleTrail } from './ParticleTrail';
+import { DynamicCamera } from './DynamicCamera';
 
 interface GameCanvasProps {
   onGameOver: (winner: number | null) => void;
   gameState: GameState;
   speedMultiplier: number;
-  initialCameraState: CameraState | null;
+  savedCameraState: CameraState;
   onCameraChange: (newState: CameraState) => void;
+  cameraView: CameraView;
 }
 
 interface CrashEvent {
@@ -37,6 +38,8 @@ interface CrashEvent {
 }
 
 interface GameLoopProps {
+  player1Ref: React.MutableRefObject<Player>;
+  player2Ref: React.MutableRefObject<Player>;
   onGameOver: (winner: number | null) => void;
   onCrash: (crashData: Omit<CrashEvent, 'id'>) => void;
   gameState: GameState;
@@ -68,7 +71,6 @@ const isSafe = (pos: [number, number, number], collision: Set<string>, player: P
     const halfGrid = GRID_SIZE / 2;
     if (x <= -halfGrid || x >= halfGrid || z <= -halfGrid || z >= halfGrid) return false;
 
-    // If invincible, only wall collisions matter (checked above). Trail collisions are ignored.
     if (player.activePowerUp.type === 'INVINCIBILITY') return true;
     
     if (collision.has(`${Math.round(x)},${Math.round(z)}`)) return false;
@@ -76,36 +78,38 @@ const isSafe = (pos: [number, number, number], collision: Set<string>, player: P
 };
 // --- End AI Helpers ---
 
-const GameLoop: React.FC<GameLoopProps> = ({ onGameOver, onCrash, gameState, speedMultiplier, powerUps, setPowerUps }) => {
-  const player1Ref = useRef<Player>(JSON.parse(JSON.stringify(INITIAL_PLAYER_1_STATE)));
-  const player2Ref = useRef<Player>(JSON.parse(JSON.stringify(INITIAL_PLAYER_2_STATE)));
-  
-  const p1Controls = useControls(INITIAL_PLAYER_1_STATE.direction, 'ARROWS');
-
+const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver, onCrash, gameState, speedMultiplier, powerUps, setPowerUps }) => {
   const p1TimeAccumulator = useRef(0);
   const p2TimeAccumulator = useRef(0);
-  const powerUpSpawnTimer = useRef(POWERUP_SPAWN_INTERVAL / 2); // Spawn first one early
+  const powerUpSpawnTimer = useRef(POWERUP_SPAWN_INTERVAL / 2);
   const collisionGrid = useRef<Set<string>>(new Set());
   const gameOverRef = useRef(false);
   
-  // Initialize grid with starting positions.
   useEffect(() => {
+    if (gameState === 'COUNTDOWN') {
+      gameOverRef.current = false;
+      p1TimeAccumulator.current = 0;
+      p2TimeAccumulator.current = 0;
+      powerUpSpawnTimer.current = POWERUP_SPAWN_INTERVAL / 2;
+      collisionGrid.current.clear();
+      
       const p1Pos = player1Ref.current.position;
       const p2Pos = player2Ref.current.position;
       collisionGrid.current.add(`${p1Pos[0]},${p1Pos[2]}`);
       collisionGrid.current.add(`${p2Pos[0]},${p2Pos[2]}`);
-  }, []);
+    }
+  }, [gameState, player1Ref, player2Ref]);
 
   const findSafeSpawnPoint = useCallback((collision: Set<string>): [number, number, number] | null => {
     const halfGrid = GRID_SIZE / 2;
-    for (let i = 0; i < 20; i++) { // Try 20 times to find a spot
+    for (let i = 0; i < 20; i++) {
       const x = Math.floor(Math.random() * (GRID_SIZE - 4)) - (halfGrid - 2);
       const z = Math.floor(Math.random() * (GRID_SIZE - 4)) - (halfGrid - 2);
       if (!collision.has(`${x},${z}`)) {
         return [x, 0.5, z];
       }
     }
-    return null; // No safe spot found
+    return null;
   }, []);
 
   useFrame((_, delta) => {
@@ -115,7 +119,7 @@ const GameLoop: React.FC<GameLoopProps> = ({ onGameOver, onCrash, gameState, spe
     powerUpSpawnTimer.current -= delta;
     if (powerUpSpawnTimer.current <= 0) {
         powerUpSpawnTimer.current = POWERUP_SPAWN_INTERVAL;
-        if (powerUps.length < 3) { // Max 3 power-ups at a time
+        if (powerUps.length < 3) {
             const pos = findSafeSpawnPoint(collisionGrid.current);
             if (pos) {
                 const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
@@ -149,6 +153,33 @@ const GameLoop: React.FC<GameLoopProps> = ({ onGameOver, onCrash, gameState, spe
     let p1Moved = false;
     let p2Moved = false;
 
+    // Player 1 direction is now updated by the input handler in the Scene component.
+    
+    // Player 2 (AI) direction logic.
+    if (p2.isAlive) {
+        const futureCollisionGrid = new Set<string>(collisionGrid.current);
+        if (p1.isAlive) {
+            const p1NextPosForAI = calculateNextPos(p1.position, p1.direction);
+            futureCollisionGrid.add(`${p1.position[0]},${p1.position[2]}`);
+            futureCollisionGrid.add(`${p1NextPosForAI[0]},${p1NextPosForAI[2]}`);
+        }
+        
+        const forwardPos = calculateNextPos(p2.position, p2.direction);
+        if (!isSafe(forwardPos, futureCollisionGrid, p2)) {
+            const leftDir = getTurnedDirection(p2.direction, 'LEFT');
+            const leftPos = calculateNextPos(p2.position, leftDir);
+            const rightDir = getTurnedDirection(p2.direction, 'RIGHT');
+            const rightPos = calculateNextPos(p2.position, rightDir);
+
+            const canGoLeft = isSafe(leftPos, futureCollisionGrid, p2);
+            const canGoRight = isSafe(rightPos, futureCollisionGrid, p2);
+
+            if (canGoLeft && canGoRight) p2.direction = Math.random() > 0.5 ? leftDir : rightDir;
+            else if (canGoLeft) p2.direction = leftDir;
+            else if (canGoRight) p2.direction = rightDir;
+        }
+    }
+
     if (p1.isAlive && p1TimeAccumulator.current >= p1TimeStep) {
         p1TimeAccumulator.current -= p1TimeStep;
         p1Moved = true;
@@ -159,40 +190,6 @@ const GameLoop: React.FC<GameLoopProps> = ({ onGameOver, onCrash, gameState, spe
     }
 
     if (!p1Moved && !p2Moved) return;
-
-    // --- Update Directions for moving players ---
-    const updateDirection = (p: Player, newDir: Direction) => {
-        const isOpposite = (p.direction === 'UP' && newDir === 'DOWN') || (p.direction === 'DOWN' && newDir === 'UP') || (p.direction === 'LEFT' && newDir === 'RIGHT') || (p.direction === 'RIGHT' && newDir === 'LEFT');
-        if (!isOpposite) p.direction = newDir;
-    };
-
-    if (p1Moved) {
-        updateDirection(p1, p1Controls.direction);
-    }
-    if (p2Moved) {
-      const futureCollisionGrid = new Set<string>(collisionGrid.current);
-      // AI anticipates player 1's next move
-      if (p1.isAlive) {
-        const p1NextPosForAI = calculateNextPos(p1.position, p1.direction);
-        futureCollisionGrid.add(`${p1.position[0]},${p1.position[2]}`);
-        futureCollisionGrid.add(`${p1NextPosForAI[0]},${p1NextPosForAI[2]}`);
-      }
-      
-      const forwardPos = calculateNextPos(p2.position, p2.direction);
-      if (!isSafe(forwardPos, futureCollisionGrid, p2)) {
-          const leftDir = getTurnedDirection(p2.direction, 'LEFT');
-          const leftPos = calculateNextPos(p2.position, leftDir);
-          const rightDir = getTurnedDirection(p2.direction, 'RIGHT');
-          const rightPos = calculateNextPos(p2.position, rightDir);
-
-          const canGoLeft = isSafe(leftPos, futureCollisionGrid, p2);
-          const canGoRight = isSafe(rightPos, futureCollisionGrid, p2);
-
-          if (canGoLeft && canGoRight) p2.direction = Math.random() > 0.5 ? leftDir : rightDir;
-          else if (canGoLeft) p2.direction = leftDir;
-          else if (canGoRight) p2.direction = rightDir;
-      }
-    }
     
     const p1NextPos = p1Moved ? calculateNextPos(p1.position, p1.direction) : p1.position;
     const p2NextPos = p2Moved ? calculateNextPos(p2.position, p2.direction) : p2.position;
@@ -217,12 +214,10 @@ const GameLoop: React.FC<GameLoopProps> = ({ onGameOver, onCrash, gameState, spe
     if (p1Moved) checkAndCollect(p1, p2, p1NextPos);
     if (p2Moved) checkAndCollect(p2, p1, p2NextPos);
 
-    
     // --- Collision Detection ---
     let p1Crashed = false;
     let p2Crashed = false;
 
-    // Check for collisions with walls and trails for players that moved
     if (p1Moved && p1.isAlive) {
         if (!isSafe(p1NextPos, collisionGrid.current, p1)) p1Crashed = true;
     }
@@ -230,30 +225,16 @@ const GameLoop: React.FC<GameLoopProps> = ({ onGameOver, onCrash, gameState, spe
         if (!isSafe(p2NextPos, collisionGrid.current, p2)) p2Crashed = true;
     }
 
-    // Check for player-on-player collisions
     if (p1.isAlive && p2.isAlive) {
         const p1NextKey = `${p1NextPos[0]},${p1NextPos[2]}`;
         const p2NextKey = `${p2NextPos[0]},${p2NextPos[2]}`;
-
         if (p1Moved && p2Moved) {
-            // Case 1: Both move to the same cell
-            if (p1NextKey === p2NextKey) {
-                p1Crashed = p2Crashed = true;
-            }
-            // Case 2: They swap cells (move through each other)
-            if (p1NextKey === `${p2.position[0]},${p2.position[2]}` && p2NextKey === `${p1.position[0]},${p1.position[2]}`) {
-                p1Crashed = p2Crashed = true;
-            }
+            if (p1NextKey === p2NextKey) p1Crashed = p2Crashed = true;
+            if (p1NextKey === `${p2.position[0]},${p2.position[2]}` && p2NextKey === `${p1.position[0]},${p1.position[2]}`) p1Crashed = p2Crashed = true;
         } else if (p1Moved) {
-            // Only p1 moves, check if it hits stationary p2
-            if (p1NextKey === `${p2.position[0]},${p2.position[2]}`) {
-                p1Crashed = true;
-            }
+            if (p1NextKey === `${p2.position[0]},${p2.position[2]}`) p1Crashed = true;
         } else if (p2Moved) {
-            // Only p2 moves, check if it hits stationary p1
-            if (p2NextKey === `${p1.position[0]},${p1.position[2]}`) {
-                p2Crashed = true;
-            }
+            if (p2NextKey === `${p1.position[0]},${p1.position[2]}`) p2Crashed = true;
         }
     }
     
@@ -261,16 +242,8 @@ const GameLoop: React.FC<GameLoopProps> = ({ onGameOver, onCrash, gameState, spe
     if (p1Crashed || p2Crashed) {
       if (gameOverRef.current) return;
       gameOverRef.current = true;
-      
-      if (p1Crashed) {
-        p1.isAlive = false;
-        onCrash({ position: p1NextPos, color: p1.color });
-      }
-      if (p2Crashed) {
-        p2.isAlive = false;
-        onCrash({ position: p2NextPos, color: p2.color });
-      }
-
+      if (p1Crashed) { p1.isAlive = false; onCrash({ position: p1NextPos, color: p1.color }); }
+      if (p2Crashed) { p2.isAlive = false; onCrash({ position: p2NextPos, color: p2.color }); }
       if (!p1.isAlive && !p2.isAlive) onGameOver(null);
       else if (!p1.isAlive) onGameOver(2);
       else onGameOver(1);
@@ -290,51 +263,126 @@ const GameLoop: React.FC<GameLoopProps> = ({ onGameOver, onCrash, gameState, spe
     }
   });
 
-  return (
-    <>
-      <LightCycle player={player1Ref} />
-      <Trail playerRef={player1Ref} />
-      <ParticleTrail playerRef={player1Ref} />
-      <LightCycle player={player2Ref} />
-      <Trail playerRef={player2Ref} />
-      <ParticleTrail playerRef={player2Ref} />
-    </>
-  );
+  return null;
 };
 
-const Scene: React.FC<GameCanvasProps> = ({ onGameOver, gameState, speedMultiplier, initialCameraState, onCameraChange }) => {
+const Scene: React.FC<GameCanvasProps> = ({ onGameOver, gameState, speedMultiplier, savedCameraState, onCameraChange, cameraView }) => {
   const [crashes, setCrashes] = useState<CrashEvent[]>([]);
   const [powerUps, setPowerUps] = useState<PowerUpType[]>([]);
-  const controlsRef = useRef<any>(null!);
+
+  const player1Ref = useRef<Player>(JSON.parse(JSON.stringify(INITIAL_PLAYER_1_STATE)));
+  const player2Ref = useRef<Player>(JSON.parse(JSON.stringify(INITIAL_PLAYER_2_STATE)));
+  
+  // --- Context-Aware Player Input Handler ---
+  // This hook now understands the camera view and applies the correct control scheme.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (gameState !== 'PLAYING') return;
+
+      const p1 = player1Ref.current;
+      const key = e.key.toLowerCase();
+
+      // For player-centric views (FPS, Follow), use bike-relative controls.
+      if (cameraView === 'FIRST_PERSON' || cameraView === 'FOLLOW') {
+        let turn: 'LEFT' | 'RIGHT' | null = null;
+        if (key === 'arrowleft' || key === 'a') turn = 'LEFT';
+        if (key === 'arrowright' || key === 'd') turn = 'RIGHT';
+        
+        if (turn) {
+          p1.direction = getTurnedDirection(p1.direction, turn);
+        }
+      } else { // THIRD_PERSON (world-relative controls)
+        const keyMap: Record<string, Direction> = {
+          'arrowup': 'UP', 'w': 'UP',
+          'arrowdown': 'DOWN', 's': 'DOWN',
+          'arrowleft': 'LEFT', 'a': 'LEFT',
+          'arrowright': 'RIGHT', 'd': 'RIGHT',
+        };
+        const newDirection = keyMap[key];
+        if (newDirection) {
+          const isOpposite = (p1.direction === 'UP' && newDirection === 'DOWN') ||
+                            (p1.direction === 'DOWN' && newDirection === 'UP') ||
+                            (p1.direction === 'LEFT' && newDirection === 'RIGHT') ||
+                            (p1.direction === 'RIGHT' && newDirection === 'LEFT');
+          if (!isOpposite) {
+            p1.direction = newDirection;
+          }
+        }
+      }
+    };
+
+    let touchStart: { x: number; y: number } | null = null;
+
+    const handleTouchStart = (e: TouchEvent) => {
+        if (gameState !== 'PLAYING' || e.touches.length === 0) return;
+        
+        // For player-centric views, tap left/right side of screen to turn.
+        if (cameraView === 'FIRST_PERSON' || cameraView === 'FOLLOW') {
+            const p1 = player1Ref.current;
+            const touchX = e.touches[0].clientX;
+            const turn = touchX < window.innerWidth / 2 ? 'LEFT' : 'RIGHT';
+            p1.direction = getTurnedDirection(p1.direction, turn);
+        } else { // THIRD_PERSON (swipe controls)
+            touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      // Swipe logic only applies to THIRD_PERSON view.
+      if (gameState !== 'PLAYING' || cameraView === 'FIRST_PERSON' || cameraView === 'FOLLOW' || !touchStart || e.changedTouches.length === 0) return;
+
+      const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+      const dx = touchEnd.x - touchStart.x;
+      const dy = touchEnd.y - touchStart.y;
+      const swipeThreshold = 30;
+
+      let newDirection: Direction | null = null;
+
+      if (Math.abs(dx) > swipeThreshold || Math.abs(dy) > swipeThreshold) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+          newDirection = dx > 0 ? 'RIGHT' : 'LEFT';
+        } else {
+          newDirection = dy > 0 ? 'DOWN' : 'UP';
+        }
+      }
+
+      if (newDirection) {
+        const p1 = player1Ref.current;
+        const isOpposite = (p1.direction === 'UP' && newDirection === 'DOWN') ||
+                          (p1.direction === 'DOWN' && newDirection === 'UP') ||
+                          (p1.direction === 'LEFT' && newDirection === 'RIGHT') ||
+                          (p1.direction === 'RIGHT' && newDirection === 'LEFT');
+        
+        if (!isOpposite) {
+          p1.direction = newDirection;
+        }
+      }
+      touchStart = null;
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [gameState, cameraView]);
+
 
   const handleCrash = useCallback((crashData: Omit<CrashEvent, 'id'>) => {
     setCrashes(currentCrashes => [
       ...currentCrashes,
-      { ...crashData, id: Date.now() + Math.random() } // Add a unique ID
+      { ...crashData, id: Date.now() + Math.random() }
     ]);
   }, []);
-
-  // Set initial camera state ONCE on mount
-  useEffect(() => {
-    if (controlsRef.current && initialCameraState) {
-      controlsRef.current.object.position.fromArray(initialCameraState.position);
-      controlsRef.current.target.fromArray(initialCameraState.target);
-      controlsRef.current.update(); // Important to apply the changes
-    }
-  }, []); // Empty dependency array ensures it runs only once
-
-  const handleControlsChange = useCallback(() => {
-    if (controlsRef.current) {
-      onCameraChange({
-        position: controlsRef.current.object.position.toArray(),
-        target: controlsRef.current.target.toArray(),
-      });
-    }
-  }, [onCameraChange]);
   
-  // Clear powerups on new game
   useEffect(() => {
     if (gameState === 'COUNTDOWN') {
+      player1Ref.current = JSON.parse(JSON.stringify(INITIAL_PLAYER_1_STATE));
+      player2Ref.current = JSON.parse(JSON.stringify(INITIAL_PLAYER_2_STATE));
       setCrashes([]);
       setPowerUps([]);
     }
@@ -347,7 +395,10 @@ const Scene: React.FC<GameCanvasProps> = ({ onGameOver, gameState, speedMultipli
       <ambientLight intensity={0.1} />
       <hemisphereLight intensity={0.5} color="#00ffff" groundColor="#ff5500" />
       <Arena gridSize={GRID_SIZE} />
+      
       <GameLoop 
+        player1Ref={player1Ref}
+        player2Ref={player2Ref}
         onGameOver={onGameOver} 
         onCrash={handleCrash} 
         gameState={gameState} 
@@ -355,6 +406,14 @@ const Scene: React.FC<GameCanvasProps> = ({ onGameOver, gameState, speedMultipli
         powerUps={powerUps}
         setPowerUps={setPowerUps}
       />
+      
+      <LightCycle player={player1Ref} />
+      <Trail playerRef={player1Ref} />
+      <ParticleTrail playerRef={player1Ref} />
+      
+      <LightCycle player={player2Ref} />
+      <Trail playerRef={player2Ref} />
+      <ParticleTrail playerRef={player2Ref} />
       
       {crashes.map(crash => (
         <CrashParticles key={crash.id} position={crash.position} color={crash.color} />
@@ -364,15 +423,11 @@ const Scene: React.FC<GameCanvasProps> = ({ onGameOver, gameState, speedMultipli
         <PowerUp key={p.id} type={p.type} position={p.position} />
       ))}
 
-      <OrbitControls 
-        ref={controlsRef}
-        onChange={handleControlsChange}
-        minPolarAngle={0.1}
-        maxPolarAngle={Math.PI / 2 - 0.1}
-        enablePan={false}
-        minDistance={30}
-        maxDistance={150}
-        zoomSpeed={0.5}
+      <DynamicCamera
+        cameraView={cameraView}
+        playerRef={player1Ref}
+        savedCameraState={savedCameraState}
+        onCameraChange={onCameraChange}
       />
 
       <EffectComposer>

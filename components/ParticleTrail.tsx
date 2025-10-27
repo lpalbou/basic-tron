@@ -1,3 +1,4 @@
+
 import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group, Mesh, Vector3, MathUtils, Euler } from 'three';
@@ -19,8 +20,8 @@ interface ParticleTrailProps {
 }
 
 const directionToRotation = new Map<Player['direction'], number>([
-  ['UP', Math.PI],
-  ['DOWN', 0],
+  ['UP', 0],
+  ['DOWN', Math.PI],
   ['LEFT', Math.PI / 2],
   ['RIGHT', -Math.PI / 2],
 ]);

@@ -31,3 +31,5 @@ export type CameraState = {
   position: [number, number, number];
   target: [number, number, number];
 };
+
+export type CameraView = 'THIRD_PERSON' | 'FOLLOW' | 'FIRST_PERSON';

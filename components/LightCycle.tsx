@@ -9,8 +9,8 @@ interface LightCycleProps {
 }
 
 const directionToRotation = new Map<Player['direction'], number>([
-  ['UP', Math.PI],
-  ['DOWN', 0],
+  ['UP', 0],
+  ['DOWN', Math.PI],
   ['LEFT', Math.PI / 2],
   ['RIGHT', -Math.PI / 2],
 ]);
