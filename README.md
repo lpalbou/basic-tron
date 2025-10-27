@@ -1,21 +1,133 @@
 <div align="center">
-  <table>
-    <tr>
-      <td>
-        <img width="400" height="250" alt="Tron Camera Follow View" src="assets/tron_camera_follow.jpg" />
-      </td>
-      <td>
-        <img width="400" height="250" alt="Tron Camera Top View" src="assets/tron_camera_top.jpg" />
-      </td>
-    </tr>
-    <tr>
-      <td align="center"><em>Follow Camera View</em></td>
-      <td align="center"><em>Top-Down View</em></td>
-    </tr>
-  </table>
+
+# 🏍️ **Basic Tron** 
+### *An AI-Powered Light Cycle Experience*
+
+[![Play Now](https://img.shields.io/badge/🎮_Play_Now-Live_Demo-00FFFF?style=for-the-badge&labelColor=000000)](https://www.lpalbou.info/basic-tron/)
+[![Built with AI](https://img.shields.io/badge/🤖_Built_with-Google_AI_Studio-FF6B35?style=for-the-badge&labelColor=000000)](https://aistudio.google.com/)
+
+---
+
+## 🎯 **Multiple Camera Perspectives**
+*Experience the Grid from every angle*
+
+<table>
+<tr>
+<td width="50%">
+<img src="assets/Follow.jpg" alt="Follow Camera - Chase the action" width="100%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,255,255,0.3);" />
+<h4 align="center">🎬 <strong>Follow Camera</strong></h4>
+<p align="center"><em>Chase the light cycle from behind</em></p>
+</td>
+<td width="50%">
+<img src="assets/FPV.jpg" alt="First Person View - Immersive experience" width="100%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(255,165,0,0.3);" />
+<h4 align="center">👁️ <strong>First Person</strong></h4>
+<p align="center"><em>Feel the speed from the cockpit</em></p>
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="50%">
+<img src="assets/TopDown.jpg" alt="Top Down View - Strategic overview" width="100%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(255,255,0,0.3);" />
+<h4 align="center">🗺️ <strong>Top-Down</strong></h4>
+<p align="center"><em>Master the arena with tactical view</em></p>
+</td>
+<td width="50%">
+<img src="assets/MobileUI.jpg" alt="Mobile UI - Touch controls" width="100%" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,255,0,0.3);" />
+<h4 align="center">📱 <strong>Mobile UI</strong></h4>
+<p align="center"><em>Optimized touch controls for mobile & tablet</em></p>
+</td>
+</tr>
+</table>
+
+---
+
+## ✨ **Features**
+
+🎮 **Multi-Platform Gaming** • Seamless experience across desktop, mobile & tablet  
+🎥 **Dynamic Cameras** • Switch between Follow, FPV, and Top-Down views  
+🎵 **AI-Generated Audio** • Immersive soundtrack and sound effects  
+⚡ **Real-Time Physics** • Smooth light cycle movement and collision detection  
+🌟 **Power-Ups** • Strategic gameplay elements  
+🎨 **Neon Aesthetics** • Authentic Tron-inspired visual design  
+
+---
+
+## ⌨️ **Keyboard Controls**
+*Master the Grid with these shortcuts*
+
+<table>
+<tr>
+<td align="center" width="33%">
+<kbd>X</kbd><br/>
+<strong>Speed Control</strong><br/>
+<em>0.5x → 1x → 1.5x → 2x</em><br/>
+<small>Default: 1x</small>
+</td>
+<td align="center" width="33%">
+<kbd>V</kbd><br/>
+<strong>Camera View</strong><br/>
+<em>Follow → FPV → Top-Down</em><br/>
+<small>Cycle through perspectives</small>
+</td>
+<td align="center" width="33%">
+<kbd>P</kbd><br/>
+<strong>Pause Game</strong><br/>
+<em>Freeze the action</em><br/>
+<small>Resume anytime</small>
+</td>
+</tr>
+</table>
+
+> 💡 **Pro Tip:** Use speed control strategically - slower speeds for tight maneuvers, faster for open areas!
+
+---
+
+## 🎯 **Game Mechanics**
+*Classic Light Cycle combat, reimagined*
+
+Inspired by the legendary **Light Cycles** segment from the [1982 Tron arcade game](https://en.wikipedia.org/wiki/Tron_(video_game)) by Bally Midway and the iconic [Tron movie](https://www.imdb.com/title/tt0084827/), this game captures the essence of high-speed digital warfare on the Grid.
+
+### 🏍️ **Core Gameplay**
+- **Continuous Trail Building** • Your light cycle leaves an indestructible wall behind as you move
+- **Collision = Death** • Hit any wall (yours or opponents') and you're derezzed instantly  
+- **Last Cycle Standing** • Outmaneuver opponents by forcing them into walls
+- **Strategic Movement** • Use the arena space wisely - every turn matters
+
+### ⚡ **Power-Ups**
+*Temporary advantages to shift the battle*
+
+<table>
+<tr>
+<td align="center" width="33%">
+🛡️<br/>
+<strong>Invincibility</strong><br/>
+<em>Phase through walls</em><br/>
+<small>Brief immunity to collisions</small>
+</td>
+<td align="center" width="33%">
+🚀<br/>
+<strong>Speed Boost</strong><br/>
+<em>Turbo acceleration</em><br/>
+<small>Outrun opponents temporarily</small>
+</td>
+<td align="center" width="33%">
+🔄<br/>
+<strong>Trail Shrink</strong><br/>
+<em>Reduce wall length</em><br/>
+<small>Your trail becomes shorter</small>
+</td>
+</tr>
+</table>
+
+> ⚔️ **Strategy:** Power-ups spawn randomly - control the center to maximize collection opportunities!
+
+---
+
 </div>
 
-# Basic Tron : an experiment with Google AI Studio
+# 🤖 An Experiment with Google AI Studio
 
 ## Disclaimer
 
@@ -70,13 +182,13 @@ The few sound effects were generated with [ElevenLabs Text-to-sound-effects](htt
 
 This contains everything you need to run your app locally.
 
-### Run on the web
+### Play Online
 
-https://www.lpalbou.info/basic-tron/
+[Play Basic Tron in your browser](https://www.lpalbou.info/basic-tron/)
 
 ### Run Locally
 
-**Prerequisites:**  Node.js
+**Prerequisite:** Node.js
 
 
 1. Install dependencies:

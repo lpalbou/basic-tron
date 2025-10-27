@@ -2,28 +2,35 @@
 import React from 'react';
 import { GameCanvas } from './components/GameCanvas';
 import { UI } from './components/UI';
-import type { GameState, CameraState, CameraView } from './types';
+import type { GameState, CameraState, CameraView, Direction } from './types';
 import useSounds from './hooks/useSounds';
 import useIsMobile from './hooks/useIsMobile';
 import { OnScreenControls } from './components/OnScreenControls';
+import useOrientation from './hooks/useOrientation';
+import { OrientationLock } from './components/OrientationLock';
+import { SpeedIndicator } from './components/SpeedIndicator';
+import { PauseButton } from './components/PauseButton';
 
 const App: React.FC = () => {
   const [gameState, setGameState] = React.useState<GameState>('MENU');
   const [winner, setWinner] = React.useState<number | null>(null);
   const [scores, setScores] = React.useState({ player1: 0, player2: 0 });
-  const [speedMultiplier, setSpeedMultiplier] = React.useState(1);
+  const speedLevels = React.useMemo(() => [0.5, 1, 1.5, 2], []);
+  const [speedIndex, setSpeedIndex] = React.useState(1); // Default to 1x speed (index 1)
+  const speedMultiplier = speedLevels[speedIndex];
+  const [speedMessage, setSpeedMessage] = React.useState<{text: string, key: number} | null>(null);
   const [gameId, setGameId] = React.useState(1);
   const [thirdPersonCameraState, setThirdPersonCameraState] = React.useState<CameraState>({
-    position: [0, 73, 7],
-    target: [0, 0, 0],
+    position: [0, 65, 28],
+    target: [0, 0, 7.6],
   });
   const [cameraView, setCameraView] = React.useState<CameraView>('THIRD_PERSON');
   
   const isMobile = useIsMobile();
-  const { playBackgroundMusic } = useSounds();
+  const orientation = useOrientation();
+  const { playBackgroundMusic, pauseMusic, resumeMusic } = useSounds();
   const [showControls, setShowControls] = React.useState(false);
 
-  // Set initial state for controls based on device type after mount
   React.useEffect(() => {
     setShowControls(isMobile);
   }, [isMobile]);
@@ -35,13 +42,37 @@ const App: React.FC = () => {
     setGameId(id => id + 1);
   }, [playBackgroundMusic]);
   
+  // --- Centralized Input Handler ---
+  // This single hook in the top-level component manages all input to prevent listener conflicts.
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if (key === 'x') {
-        setSpeedMultiplier(s => (s % 3) + 1);
+
+      // --- Global Controls (work outside of 'PLAYING' state) ---
+      if (key === 'p') {
+        setGameState(prev => {
+          if (prev === 'PLAYING') {
+            pauseMusic();
+            return 'PAUSED';
+          }
+          if (prev === 'PAUSED') {
+            resumeMusic();
+            return 'PLAYING';
+          }
+          return prev;
+        });
         return;
       }
+
+      if (key === 'x') {
+        setSpeedIndex(prevIndex => {
+          const newIndex = (prevIndex + 1) % speedLevels.length;
+          setSpeedMessage({ text: `Speed: ${speedLevels[newIndex]}x`, key: Date.now() });
+          return newIndex;
+        });
+        return;
+      }
+
       if (key === 'v') {
         setCameraView(v => {
           if (v === 'THIRD_PERSON') return 'FOLLOW';
@@ -50,14 +81,45 @@ const App: React.FC = () => {
         });
         return;
       }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
 
+      // --- Player Movement Controls (only dispatched when playing) ---
+      if (gameState === 'PLAYING') {
+        const event = new CustomEvent('player-input', { detail: { type: 'keyboard', key } });
+        window.dispatchEvent(event);
+      }
+    };
+
+    let touchStart: { x: number; y: number } | null = null;
+    const handleTouchStart = (e: TouchEvent) => {
+        if (gameState !== 'PLAYING' || e.touches.length === 0) return;
+        touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+        if (cameraView === 'FIRST_PERSON' || cameraView === 'FOLLOW') {
+            const event = new CustomEvent('player-input', { detail: { type: 'touch-tap', x: touchStart.x } });
+            window.dispatchEvent(event);
+        }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+        if (gameState !== 'PLAYING' || cameraView === 'FIRST_PERSON' || cameraView === 'FOLLOW' || !touchStart || e.changedTouches.length === 0) return;
+        
+        const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        const event = new CustomEvent('player-input', { detail: { type: 'touch-swipe', start: touchStart, end: touchEnd } });
+        window.dispatchEvent(event);
+        touchStart = null;
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, []);
+  }, [gameState, cameraView, speedLevels, setGameState, setSpeedIndex, setCameraView, setSpeedMessage, pauseMusic, resumeMusic]);
+
 
   React.useEffect(() => {
     if (gameState === 'COUNTDOWN') {
@@ -89,6 +151,10 @@ const App: React.FC = () => {
     setThirdPersonCameraState(newState);
   }, []);
 
+  if (isMobile && orientation === 'portrait') {
+    return <OrientationLock />;
+  }
+
   return (
     <div className="w-full h-full bg-black relative">
       <UI 
@@ -96,8 +162,8 @@ const App: React.FC = () => {
         winner={winner} 
         onStart={startGame} 
         scores={scores} 
-        speedMultiplier={speedMultiplier} 
       />
+      {speedMessage && <SpeedIndicator message={speedMessage.text} messageKey={speedMessage.key} />}
       {gameState !== 'MENU' && (
         <GameCanvas
           key={gameId}
@@ -109,12 +175,13 @@ const App: React.FC = () => {
           cameraView={cameraView}
         />
       )}
-      {/* Updated logic: show controls if toggled on, and only during gameplay */}
-      {showControls && (gameState === 'PLAYING' || gameState === 'COUNTDOWN') && (
+      {showControls && (gameState === 'PLAYING' || gameState === 'COUNTDOWN' || gameState === 'PAUSED') && (
         <OnScreenControls />
       )}
-      {/* New toggle button for on-screen controls */}
-      <div className="absolute bottom-4 right-4 z-30">
+      {(gameState === 'PLAYING' || gameState === 'PAUSED') && (
+        <PauseButton gameState={gameState} />
+      )}
+      <div className="absolute top-4 left-4 z-30">
         <button
           onClick={() => setShowControls(s => !s)}
           className="w-12 h-12 bg-gray-700 bg-opacity-40 rounded-full text-2xl flex items-center justify-center border-2 border-gray-500 hover:bg-gray-600 transition-colors backdrop-blur-sm"

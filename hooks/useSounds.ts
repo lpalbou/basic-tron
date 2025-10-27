@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Singleton pattern to ensure AudioContext and buffer are created only once.
@@ -72,6 +73,10 @@ const useSounds = () => {
 
   const playBackgroundMusic = React.useCallback(async () => {
     if (isPlayingRef.current) {
+      // If music is paused, just resume it.
+      if (audioContext && audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       return;
     }
 
@@ -111,7 +116,19 @@ const useSounds = () => {
     }
   }, []);
 
-  return { playBackgroundMusic };
+  const pauseMusic = React.useCallback(() => {
+    if (audioContext && audioContext.state === 'running') {
+      audioContext.suspend();
+    }
+  }, []);
+
+  const resumeMusic = React.useCallback(() => {
+    if (audioContext && audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+  }, []);
+
+  return { playBackgroundMusic, pauseMusic, resumeMusic };
 };
 
 export default useSounds;

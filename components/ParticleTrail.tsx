@@ -2,7 +2,7 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group, Mesh, Vector3, MathUtils, Euler } from 'three';
-import type { Player } from '../types';
+import type { Player, GameState } from '../types';
 import type { MeshStandardMaterial } from 'three';
 import { POWERUP_INVINCIBILITY_COLOR, POWERUP_SPEED_BOOST_COLOR } from '../constants';
 
@@ -17,6 +17,7 @@ interface ParticleData {
 
 interface ParticleTrailProps {
   playerRef: React.MutableRefObject<Player>;
+  gameState: GameState;
 }
 
 const directionToRotation = new Map<Player['direction'], number>([
@@ -26,7 +27,7 @@ const directionToRotation = new Map<Player['direction'], number>([
   ['RIGHT', -Math.PI / 2],
 ]);
 
-export const ParticleTrail: React.FC<ParticleTrailProps> = ({ playerRef }) => {
+export const ParticleTrail: React.FC<ParticleTrailProps> = ({ playerRef, gameState }) => {
   const groupRef = useRef<Group>(null!);
   const particleMeshes = useRef<Mesh[]>([]);
   const particleData = useRef<ParticleData[]>([]);
@@ -54,7 +55,7 @@ export const ParticleTrail: React.FC<ParticleTrailProps> = ({ playerRef }) => {
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
-
+    
     const player = playerRef.current;
     
     // Smoothly interpolate position and rotation to follow the light cycle seamlessly
@@ -67,9 +68,11 @@ export const ParticleTrail: React.FC<ParticleTrailProps> = ({ playerRef }) => {
     while (rotDiff < -Math.PI) rotDiff += 2 * Math.PI;
     smoothRot.current.y += rotDiff * 0.3;
 
+    if (gameState === 'PAUSED') return;
+
     // --- Particle Emission Logic ---
     emitTimer.current += delta;
-    if (player.isAlive && emitTimer.current >= EMIT_INTERVAL) {
+    if (player.isAlive && gameState === 'PLAYING' && emitTimer.current >= EMIT_INTERVAL) {
       emitTimer.current = 0;
       
       const index = currentPoolIndex.current;

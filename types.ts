@@ -23,7 +23,7 @@ export interface Player {
   trailJustShrank?: boolean;
 }
 
-export type GameState = 'MENU' | 'COUNTDOWN' | 'PLAYING' | 'CRASHED' | 'GAME_OVER';
+export type GameState = 'MENU' | 'COUNTDOWN' | 'PLAYING' | 'PAUSED' | 'CRASHED' | 'GAME_OVER';
 
 export type ControlsType = 'ARROWS' | 'WASD';
 

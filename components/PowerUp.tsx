@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh } from 'three';
@@ -19,10 +18,8 @@ export const PowerUp: React.FC<PowerUpProps> = ({ type, position }) => {
   const meshRef = useRef<Mesh>(null!);
   const config = POWERUP_CONFIG[type];
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     if (meshRef.current) {
-      // Bobbing animation
-      meshRef.current.position.y = position[1] + Math.sin(clock.getElapsedTime() * 2) * 0.25;
       // Rotation animation
       meshRef.current.rotation.y += 0.01;
       meshRef.current.rotation.x += 0.005;

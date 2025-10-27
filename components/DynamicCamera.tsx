@@ -2,13 +2,14 @@ import React, { useRef, useCallback, useLayoutEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Vector3, Euler } from 'three';
-import type { Player, CameraView, CameraState, Direction } from '../types';
+import type { Player, CameraView, CameraState, Direction, GameState } from '../types';
 
 interface DynamicCameraProps {
   cameraView: CameraView;
   playerRef: React.MutableRefObject<Player>;
   savedCameraState: CameraState;
   onCameraChange: (newState: CameraState) => void;
+  gameState: GameState;
 }
 
 // Helper map for rotation
@@ -19,34 +20,22 @@ const directionToRotation = new Map<Direction, number>([
   ['RIGHT', -Math.PI / 2],
 ]);
 
-/**
- * A wrapper for OrbitControls that handles saving and restoring its state.
- * This component is designed to be mounted and unmounted, restoring its
- * state perfectly on each mount.
- */
-const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' | 'playerRef'>> = ({
+const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' | 'playerRef' | 'gameState'>> = ({
     savedCameraState,
     onCameraChange
 }) => {
     const controlsRef = useRef<any>(null!);
     const { camera } = useThree();
 
-    // useLayoutEffect runs synchronously after all DOM mutations.
-    // This is the correct hook to use for imperatively setting the state
-    // of a DOM-like object (like OrbitControls) on mount to avoid flicker
-    // and ensure it happens before the next paint.
     useLayoutEffect(() => {
         if (controlsRef.current) {
-            // Restore camera position and target from the saved state
             camera.position.fromArray(savedCameraState.position);
             controlsRef.current.target.fromArray(savedCameraState.target);
-            // Inform the controls that we have made a change
             controlsRef.current.update();
         }
-    }, []); // Empty dependency array ensures this runs only ONCE on mount.
+    }, []); 
 
     const handleControlsChange = useCallback(() => {
-        // When the user moves the camera, save the new state
         if (controlsRef.current) {
             onCameraChange({
                 position: controlsRef.current.object.position.toArray(),
@@ -69,31 +58,25 @@ const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' 
     );
 };
 
-/**
- * This component manages which camera logic is active based on the cameraView prop.
- * It renders the ThirdPersonCameraControls or applies FPS/Follow logic directly.
- */
 export const DynamicCamera: React.FC<DynamicCameraProps> = ({
   cameraView,
   playerRef,
   savedCameraState,
   onCameraChange,
+  gameState
 }) => {
   const { camera } = useThree();
   
-  // Refs for smooth camera interpolation in Follow/FPS modes
   const smoothPos = useRef(new Vector3(...playerRef.current.position));
   const smoothRot = useRef(new Euler(0, directionToRotation.get(playerRef.current.direction) ?? 0, 0));
 
   useFrame(() => {
-    // This frame loop is only for the non-OrbitControls views
     if (cameraView === 'THIRD_PERSON') {
-      return; // OrbitControls is handling the camera
+      return; 
     }
 
     const p = playerRef.current;
-
-    // Smoothly interpolate player's position and rotation for camera movement
+    
     const targetPosition = new Vector3(...p.position);
     smoothPos.current.lerp(targetPosition, 0.4);
 
@@ -102,32 +85,35 @@ export const DynamicCamera: React.FC<DynamicCameraProps> = ({
     while (rotDiff > Math.PI) rotDiff -= 2 * Math.PI;
     while (rotDiff < -Math.PI) rotDiff += 2 * Math.PI;
     smoothRot.current.y += rotDiff * 0.3;
+    
+    if (gameState === 'PAUSED') return;
 
     if (cameraView === 'FIRST_PERSON') {
-      // Position the camera just behind and above the center of the bike
-      const cameraOffset = new Vector3(0, 0.8, 0.5);
+      // Moved camera further forward (from -2.5 to -4.5) to prevent clipping into the longer bike model.
+      // Also slightly raised it for a better view over the front wheel arch.
+      const cameraOffset = new Vector3(0, 0.8, -4.5);
       cameraOffset.applyEuler(smoothRot.current);
       camera.position.copy(smoothPos.current).add(cameraOffset);
 
-      // Point the camera forward
-      const lookAtOffset = new Vector3(0, 0.6, -5);
+      // Look slightly further ahead for a better sense of speed.
+      const lookAtOffset = new Vector3(0, 0.5, -15);
       lookAtOffset.applyEuler(smoothRot.current);
       camera.lookAt(smoothPos.current.clone().add(lookAtOffset));
-    } else { // FOLLOW mode
-      // Position the camera behind and above the player
-      const cameraOffset = new Vector3(0, 8, 15);
+
+    } else { // FOLLOW mode - New "Chase Cam" logic
+      // Shift camera to the right and position it behind and above
+      const cameraOffset = new Vector3(2.5, 6, 12); // x=2.5 is half the previous offset
       cameraOffset.applyEuler(smoothRot.current);
       camera.position.copy(smoothPos.current).add(cameraOffset);
 
-      // Look at a point slightly in front of the player
-      const lookAtPosition = smoothPos.current.clone();
-      lookAtPosition.y += 2;
+      // Target a point well in front of the bike for a proactive chase-cam feel
+      const lookAtOffset = new Vector3(0, 2, -15); // Look slightly up and far ahead
+      lookAtOffset.applyEuler(smoothRot.current);
+      const lookAtPosition = smoothPos.current.clone().add(lookAtOffset);
       camera.lookAt(lookAtPosition);
     }
   });
 
-  // Conditionally render the dedicated controls component.
-  // This leverages React's mount/unmount lifecycle to reset and restore state correctly.
   return cameraView === 'THIRD_PERSON' ? (
     <ThirdPersonCameraControls 
         savedCameraState={savedCameraState}

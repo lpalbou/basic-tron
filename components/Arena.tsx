@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Grid } from '@react-three/drei';
 
@@ -5,17 +6,21 @@ interface ArenaProps {
   gridSize: number;
 }
 
-const Wall: React.FC<{ position: [number, number, number]; rotation: [number, number, number]; size: [number, number] }> = ({ position, rotation, size }) => {
+const Wall: React.FC<{ position: [number, number, number]; rotation: [number, number, number]; size: [number, number, number] }> = ({ position, rotation, size }) => {
   return (
     <mesh position={position} rotation={rotation}>
-      <planeGeometry args={size} />
-      <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.5} transparent opacity={0.2} />
+      <boxGeometry args={size} />
+      {/* Material is less transparent and less emissive for a more solid feel */}
+      <meshStandardMaterial color="#00ffff" emissive="#00aaaa" emissiveIntensity={0.2} transparent opacity={0.4} />
     </mesh>
   );
 };
 
 export const Arena: React.FC<ArenaProps> = ({ gridSize }) => {
     const halfGrid = gridSize / 2;
+    const wallHeight = 5;
+    const wallThickness = 2;
+
     return (
     <>
       <Grid
@@ -32,10 +37,10 @@ export const Arena: React.FC<ArenaProps> = ({ gridSize }) => {
         infiniteGrid
       />
       {/* Arena Walls */}
-      <Wall position={[-halfGrid, 2.5, 0]} rotation={[0, Math.PI / 2, 0]} size={[gridSize, 5]} />
-      <Wall position={[halfGrid, 2.5, 0]} rotation={[0, -Math.PI / 2, 0]} size={[gridSize, 5]} />
-      <Wall position={[0, 2.5, -halfGrid]} rotation={[0, 0, 0]} size={[gridSize, 5]} />
-      <Wall position={[0, 2.5, halfGrid]} rotation={[0, -Math.PI, 0]} size={[gridSize, 5]} />
+      <Wall position={[-halfGrid, wallHeight / 2, 0]} rotation={[0, Math.PI / 2, 0]} size={[gridSize, wallHeight, wallThickness]} />
+      <Wall position={[halfGrid, wallHeight / 2, 0]} rotation={[0, -Math.PI / 2, 0]} size={[gridSize, wallHeight, wallThickness]} />
+      <Wall position={[0, wallHeight / 2, -halfGrid]} rotation={[0, 0, 0]} size={[gridSize, wallHeight, wallThickness]} />
+      <Wall position={[0, wallHeight / 2, halfGrid]} rotation={[0, -Math.PI, 0]} size={[gridSize, wallHeight, wallThickness]} />
     </>
   );
 };
