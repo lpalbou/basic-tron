@@ -1,8 +1,41 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<div style="position: relative; width: 800px; height: 400px; margin: 0 auto; overflow: hidden; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);">
+  <img id="carousel-img" width="800" height="400" alt="Tron Game Views" src="assets/tron_camera_follow.jpg" style="transition: opacity 0.5s ease-in-out;" />
+</div>
+<script>
+(function() {
+  const images = [
+    { src: 'assets/tron_camera_follow.jpg', alt: 'Tron Camera Follow View' },
+    { src: 'assets/tron_camera_top.jpg', alt: 'Tron Camera Top View' }
+  ];
+  let currentIndex = 0;
+  const imgElement = document.getElementById('carousel-img');
+  
+  function switchImage() {
+    if (imgElement) {
+      imgElement.style.opacity = '0';
+      setTimeout(() => {
+        currentIndex = (currentIndex + 1) % images.length;
+        imgElement.src = images[currentIndex].src;
+        imgElement.alt = images[currentIndex].alt;
+        imgElement.style.opacity = '1';
+      }, 250);
+    }
+  }
+  
+  // Start carousel after page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setInterval(switchImage, 2000);
+    });
+  } else {
+    setInterval(switchImage, 2000);
+  }
+})();
+</script>
 </div>
 
-# Experiment with Google AI Studio
+# Basic Tron : an experiment with Google AI Studio
 
 ## Disclaimer
 
