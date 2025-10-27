@@ -29,6 +29,11 @@ It's interesting how the 1982 movie is so much more forward thinking in terms of
 
 In any case, I decide to try the Google AI Studio vibe coding for this. Didn't spend much time, it's more a side side silly project. 
 
+## Initial prompt
+*Build a mobile first web app to play the game Tron. Use SOTA UI/UX and leverage existing free 3D models of the bike.*
+
+Note : SOTA = State Of The Art
+
 ## Quick opinion on Google AI Studio
 Google LLMs (gemini) still have big issues in actually calling tools. Many times I had to remind it that *he thought about a solution* but didn't *implement it* ! I find it surprising that such an app coming from Google wouldn't be more robust. But yes, in the end, you can vibe code with it - just be prepared to some frustration.
 
