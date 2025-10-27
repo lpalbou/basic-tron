@@ -3,6 +3,7 @@ import React from 'react';
 import { GameCanvas } from './components/GameCanvas';
 import { UI } from './components/UI';
 import type { GameState, CameraState } from './types';
+import useSounds from './hooks/useSounds';
 
 const App: React.FC = () => {
   const [gameState, setGameState] = React.useState<GameState>('MENU');
@@ -14,11 +15,14 @@ const App: React.FC = () => {
   const [gameId, setGameId] = React.useState(1); 
   const cameraStateRef = React.useRef<CameraState | null>(null);
 
-  const startGame = React.useCallback(() => {
+  const { playBackgroundMusic } = useSounds();
+
+  const startGame = React.useCallback(async () => {
+    await playBackgroundMusic();
     setWinner(null);
     setGameState('COUNTDOWN');
     setGameId(id => id + 1);
-  }, []);
+  }, [playBackgroundMusic]);
   
   // Speed control listener
   React.useEffect(() => {
@@ -63,7 +67,13 @@ const App: React.FC = () => {
 
   return (
     <div className="w-full h-full bg-black">
-      <UI gameState={gameState} winner={winner} onStart={startGame} scores={scores} speedMultiplier={speedMultiplier} />
+      <UI 
+        gameState={gameState} 
+        winner={winner} 
+        onStart={startGame} 
+        scores={scores} 
+        speedMultiplier={speedMultiplier} 
+      />
       {gameState !== 'MENU' && (
         <GameCanvas
           key={gameId}

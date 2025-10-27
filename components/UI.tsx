@@ -128,17 +128,19 @@ export const UI: React.FC<UIProps> = ({ gameState, winner, onStart, scores, spee
         {gameState === 'MENU' && <Title />}
         {gameState === 'GAME_OVER' && <GameOverScreen winner={winner} />}
 
-        <button 
-          onClick={onStart} 
-          className={commonButtonClasses}
-          style={{
-            backgroundColor: buttonColor,
-            boxShadow: `0 0 30px ${buttonColor}`,
-            borderColor: buttonColor,
-          }}
-        >
-          {gameState === 'MENU' ? 'Start Game' : 'Play Again'}
-        </button>
+        <div className="flex items-center justify-center gap-4">
+            <button 
+              onClick={onStart} 
+              className={commonButtonClasses}
+              style={{
+                backgroundColor: buttonColor,
+                boxShadow: `0 0 30px ${buttonColor}`,
+                borderColor: buttonColor,
+              }}
+            >
+              {gameState === 'MENU' ? 'Start Game' : 'Play Again'}
+            </button>
+        </div>
         
         {gameState === 'MENU' && <Controls />}
         {(gameState === 'MENU' || gameState === 'GAME_OVER') && <PowerUpLegend />}

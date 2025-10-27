@@ -5,7 +5,7 @@ export const GRID_SIZE = 76;
 export const HALF_GRID_SIZE = GRID_SIZE / 2;
 
 // The time in milliseconds between each game tick. Lower is faster.
-export const GAME_SPEED_MS = 60;
+export const GAME_SPEED_MS = 46; // Increased base speed by ~30% from 60
 
 // Player visual constants.
 export const PLAYER_1_COLOR = '#00f2ff';
