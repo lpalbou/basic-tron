@@ -12,14 +12,14 @@
 
 This README is organized into **two distinct parts**:
 
-### 🎮 **Part I: The Game**
+### 🎮 **[Part I: The Game](#-part-i-the-game)**
 *Complete presentation of Basic Tron - features, gameplay, controls, and mechanics*
 - Multiple camera perspectives and screenshots
 - Game features and controls
 - Core gameplay mechanics and power-ups
 - How to play and run locally
 
-### 🤖 **Part II: The AI Experiment** 
+### 🤖 **[Part II: The AI Experiment](#-part-ii-the-ai-experiment)** 
 *Technical exploration of AI-assisted development and content creation*
 - Google AI Studio development experience
 - AI-generated music and sound effects
