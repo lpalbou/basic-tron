@@ -1,3 +1,14 @@
-node_modules
-dist
-public
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist/*
+
+# Public assets (generated)
+public/
+public/*
+
+# Ensure no nested tracking
+**/dist/
+**/public/
