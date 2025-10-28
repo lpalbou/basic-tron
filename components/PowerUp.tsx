@@ -12,6 +12,7 @@ export const POWERUP_CONFIG = {
   SPEED_BOOST: { color: '#ffff00', shape: 'tetrahedron' },
   INVINCIBILITY: { color: '#ffffff', shape: 'icosahedron' },
   TRAIL_SHRINK: { color: '#00ff00', shape: 'torus' },
+  EMP_SHOCKWAVE: { color: '#00BFFF', shape: 'octahedron' },
 } as const;
 
 export const PowerUp: React.FC<PowerUpProps> = ({ type, position }) => {
@@ -34,6 +35,8 @@ export const PowerUp: React.FC<PowerUpProps> = ({ type, position }) => {
         return <icosahedronGeometry args={[0.7]} />;
       case 'torus':
         return <torusGeometry args={[0.55, 0.2, 16, 32]} />;
+      case 'octahedron':
+        return <octahedronGeometry args={[0.8]} />;
       default:
         return <boxGeometry args={[1, 1, 1]} />;
     }

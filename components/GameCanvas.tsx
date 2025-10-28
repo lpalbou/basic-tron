@@ -18,6 +18,7 @@ import {
   POWERUP_DURATION,
   POWERUP_SPEED_MULTIPLIER,
   TRAIL_SHRINK_PERCENTAGE,
+  EMP_FREEZE_DURATION,
 } from '../constants';
 import { PowerUp } from './PowerUp';
 import { ParticleTrail } from './ParticleTrail';
@@ -26,6 +27,7 @@ import { DistantData } from './DigitalDust';
 import { WallSparks } from './WallSparks';
 import { TrailSparks } from './TrailSparks';
 import { SfxKey } from '../hooks/useSoundEffects';
+import { Shockwave } from './Shockwave';
 
 interface GameCanvasProps {
   onGameOver: (winner: number | null) => void;
@@ -38,6 +40,11 @@ interface GameCanvasProps {
   scores: { player1: number; player2: number };
 }
 
+interface ShockwaveState {
+    id: string;
+    position: [number, number, number];
+}
+
 interface GameLoopProps {
   player1Ref: React.MutableRefObject<Player>;
   player2Ref: React.MutableRefObject<Player>;
@@ -46,6 +53,7 @@ interface GameLoopProps {
   speedMultiplier: number;
   powerUps: PowerUpType[];
   setPowerUps: React.Dispatch<React.SetStateAction<PowerUpType[]>>;
+  setShockwaves: React.Dispatch<React.SetStateAction<ShockwaveState[]>>;
   sfx: SfxControls;
 }
 
@@ -79,7 +87,7 @@ const isSafe = (pos: [number, number, number], collision: Set<string>, player: P
 };
 // --- End AI Helpers ---
 
-const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver, gameState, speedMultiplier, powerUps, setPowerUps, sfx }) => {
+const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver, gameState, speedMultiplier, powerUps, setPowerUps, setShockwaves, sfx }) => {
   const p1TimeAccumulator = useRef(0);
   const p2TimeAccumulator = useRef(0);
   const powerUpSpawnTimer = useRef(POWERUP_SPAWN_INTERVAL / 2);
@@ -198,19 +206,26 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
         }
     }
 
-    // --- Update Player Power-up Durations ---
+    // --- Update Player Status (Power-ups & Freeze) ---
     if (p1.activePowerUp.duration > 0) {
         p1.activePowerUp.duration -= delta;
         if (p1.activePowerUp.duration <= 0) p1.activePowerUp = { type: null, duration: 0 };
     }
+     if (p1.frozenFor > 0) p1.frozenFor -= delta;
+
     if (p2.activePowerUp.duration > 0) {
         p2.activePowerUp.duration -= delta;
         if (p2.activePowerUp.duration <= 0) p2.activePowerUp = { type: null, duration: 0 };
     }
+    if (p2.frozenFor > 0) p2.frozenFor -= delta;
 
     // --- Independent Movement Logic ---
-    p1TimeAccumulator.current += delta;
-    p2TimeAccumulator.current += delta;
+    if (p1.frozenFor <= 0) {
+        p1TimeAccumulator.current += delta;
+    }
+    if (p2.frozenFor <= 0) {
+        p2TimeAccumulator.current += delta;
+    }
 
     const p1Speed = p1.activePowerUp.type === 'SPEED_BOOST' ? POWERUP_SPEED_MULTIPLIER : 1;
     const p2Speed = p2.activePowerUp.type === 'SPEED_BOOST' ? POWERUP_SPEED_MULTIPLIER : 1;
@@ -222,7 +237,7 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
     let p2Moved = false;
     
     // Player 2 (AI) direction logic.
-    if (p2.isAlive) {
+    if (p2.isAlive && p2.frozenFor <= 0) {
         let movedForPowerUp = false;
         if (powerUps.length > 0) {
             let closestPowerUp = null;
@@ -273,8 +288,8 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
         }
     }
 
-    if (p1.isAlive && p1TimeAccumulator.current >= p1TimeStep) { p1TimeAccumulator.current -= p1TimeStep; p1Moved = true; }
-    if (p2.isAlive && p2TimeAccumulator.current >= p2TimeStep) { p2TimeAccumulator.current -= p2TimeStep; p2Moved = true; }
+    if (p1.isAlive && p1.frozenFor <= 0 && p1TimeAccumulator.current >= p1TimeStep) { p1TimeAccumulator.current -= p1TimeStep; p1Moved = true; }
+    if (p2.isAlive && p2.frozenFor <= 0 && p2TimeAccumulator.current >= p2TimeStep) { p2TimeAccumulator.current -= p2TimeStep; p2Moved = true; }
 
     if (!p1Moved && !p2Moved) return;
     
@@ -297,6 +312,9 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
                     case 'SPEED_BOOST':
                         sfx.playSound('invincible', { volume: 0.8 });
                         break;
+                    case 'EMP_SHOCKWAVE':
+                        sfx.playSound('emp_shockwave');
+                        break;
                 }
             }
             if (collected.type === 'TRAIL_SHRINK') {
@@ -306,6 +324,9 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
                     removed.forEach(point => collisionGrid.current.delete(`${Math.round(point[0])},${Math.round(point[2])}`));
                     opponent.trailJustShrank = true;
                 }
+            } else if (collected.type === 'EMP_SHOCKWAVE') {
+                opponent.frozenFor = EMP_FREEZE_DURATION;
+                setShockwaves(prev => [...prev, { id: `sw-${Date.now()}`, position: collected.position }]);
             } else {
                 collector.activePowerUp = { type: collected.type, duration: POWERUP_DURATION };
             }
@@ -395,6 +416,7 @@ const Scene: React.FC<GameCanvasProps> = ({
     scores,
 }) => {
   const [powerUps, setPowerUps] = useState<PowerUpType[]>([]);
+  const [shockwaves, setShockwaves] = useState<ShockwaveState[]>([]);
   const [isInvincible, setIsInvincible] = useState(false);
 
   const player1Ref = useRef<Player>(JSON.parse(JSON.stringify(INITIAL_PLAYER_1_STATE)));
@@ -483,6 +505,7 @@ const Scene: React.FC<GameCanvasProps> = ({
       player1Ref.current = JSON.parse(JSON.stringify(INITIAL_PLAYER_1_STATE));
       player2Ref.current = JSON.parse(JSON.stringify(INITIAL_PLAYER_2_STATE));
       setPowerUps([]);
+      setShockwaves([]);
     }
   }, [gameState]);
 
@@ -502,6 +525,7 @@ const Scene: React.FC<GameCanvasProps> = ({
         speedMultiplier={speedMultiplier} 
         powerUps={powerUps}
         setPowerUps={setPowerUps}
+        setShockwaves={setShockwaves}
         sfx={sfx}
       />
       
@@ -517,6 +541,14 @@ const Scene: React.FC<GameCanvasProps> = ({
 
       {powerUps.map(p => (
         <PowerUp key={p.id} type={p.type} position={p.position} />
+      ))}
+
+      {shockwaves.map(sw => (
+        <Shockwave 
+            key={sw.id} 
+            position={sw.position} 
+            onComplete={() => setShockwaves(s => s.filter(x => x.id !== sw.id))} 
+        />
       ))}
 
       <DynamicCamera

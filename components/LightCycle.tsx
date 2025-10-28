@@ -1,7 +1,7 @@
 
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Group, Vector3, PointLight, Euler, Mesh, BufferAttribute, Material } from 'three';
+import { Group, Vector3, PointLight, Euler, Mesh, BufferAttribute, Material, MathUtils } from 'three';
 import type { MeshStandardMaterial, BufferGeometry } from 'three';
 import type { Player, GameState } from '../types';
 import { createDerezzMaterial } from './DerezzMaterial';
@@ -31,7 +31,7 @@ const Wheel: React.FC<{ playerRef: React.MutableRefObject<Player>; position: [nu
   const { color } = playerRef.current;
 
   useFrame((_, delta) => {
-    if (gameState !== 'PLAYING') return;
+    if (gameState !== 'PLAYING' || playerRef.current.frozenFor > 0) return;
 
     if (innerSpokesRef.current) {
       innerSpokesRef.current.rotation.x -= delta * 12;
@@ -202,6 +202,21 @@ export const LightCycle: React.FC<{ player: React.MutableRefObject<Player>; game
     lightRef.current.visible = p.isAlive && !isRezzing.current;
     
     if (gameState === 'PAUSED') return;
+
+     // --- Frozen Visual Effect ---
+    if (p.frozenFor > 0) {
+        lightRef.current.intensity = Math.random() * 8 + 2;
+        const jitter = 0.05;
+        // Jitter from the smoothed position to prevent drifting away
+        groupRef.current.position.copy(currentPos.current).add(
+            new Vector3(
+                MathUtils.randFloatSpread(jitter),
+                0,
+                MathUtils.randFloatSpread(jitter)
+            )
+        );
+        return;
+    }
     
     // Exit early if the bike is fully dead and not animating
     if (!p.isAlive && !isDerezzing.current) return;

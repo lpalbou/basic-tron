@@ -5,30 +5,31 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 // Some keys map to an array for random selection.
 const sfxMap = {
   crashBike: [
-    'assets/fx/crash_bike/Crash_of_a_Tron_Ligh_#2-1761592390981.mp3',
-    'assets/fx/crash_bike/Crash_of_a_Tron_Ligh-1761592514481.mp3',
+    'assets/fx/crash_bike1.mp3',
+    'assets/fx/crash_bike2.mp3',
   ],
   crashWall: [
-    'assets/fx/crash_wall/crash_and_explosion__#1-1761533541840.mp3',
-    'assets/fx/crash_wall/crash_and_explosion_-1761533521474.mp3',
+    'assets/fx/crash_wall1.mp3',
+    'assets/fx/crash_wall2.mp3',
   ],
   wallProximity: [
-    'assets/fx/energy_wall/Continuous_humming_o_#1-1761592754870.mp3',
-    'assets/fx/energy_wall/Continuous_humming_o-1761592789930.mp3',
-    'assets/fx/energy_wall/Distinct_Engine_Hum__#2-1761592935265.mp3',
-    'assets/fx/energy_wall/Distinct_Engine_Hum_-1761591654694.mp3'
+    'assets/fx/energy_wall1.mp3',
+    'assets/fx/energy_wall2.mp3',
+    'assets/fx/energy_wall3.mp3',
+    'assets/fx/energy_wall4.mp3'
   ],
   engine : [
-    'assets/fx/engine/Distinct_Engine_Hum__#3-1761591617645.mp3',
-    'assets/fx/engine/Distinct_Engine_Hum_-1761591654694.mp3',
-    'assets/fx/engine/Distinct_Engine_Hum_-1761591699631.mp3',
-    'assets/fx/engine/Distinct_Engine_Hum_-1761592984264.mp3'
+    'assets/fx/engine1.mp3',
+    'assets/fx/engine2.mp3',
+    'assets/fx/engine3.mp3',
+    'assets/fx/engine4.mp3'
   ],
-  invincible: 'assets/fx/invincible/sci_fi_bike_power_up-1761566714683.mp3',
-  trailShrink: 'assets/fx/trail_shrink/sci_fi_sound_effect__#2-1761568932908.mp3',
+  invincible: 'assets/fx/invincible.mp3',
+  trailShrink: 'assets/fx/trail_shrink.mp3',
+  emp_shockwave: 'assets/fx/emp_shockwave.mp3',
   turn: [
-    'assets/fx/turn/Turning_with_a_Tron__#1-1761592106624.mp3',
-    'assets/fx/turn/Turning_with_a_Tron__#2-1761591850024.mp3',
+    'assets/fx/turn1.mp3',
+    'assets/fx/turn2.mp3',
   ],
 };
 

@@ -8,6 +8,7 @@ const POWERUP_DETAILS: Record<PowerUpType, { name: string; description: string }
   SPEED_BOOST: { name: 'Speed Boost', description: 'Temporarily increases your speed.' },
   INVINCIBILITY: { name: 'Invincibility', description: 'Pass through trails without crashing.' },
   TRAIL_SHRINK: { name: 'Trail Shrink', description: "Instantly removes 50% of your opponent's trail." },
+  EMP_SHOCKWAVE: { name: 'EMP Shockwave', description: 'Temporarily freezes your opponent in place.' },
 };
 
 const LegendItem: React.FC<{ type: PowerUpType }> = ({ type }) => {

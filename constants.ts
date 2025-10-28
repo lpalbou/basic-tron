@@ -16,11 +16,12 @@ export const POWERUP_INVINCIBILITY_COLOR = '#ffffff';
 export const POWERUP_SPEED_BOOST_COLOR = '#ffff00';
 
 // Power-up constants
-export const POWERUP_TYPES: PowerUpType[] = ['SPEED_BOOST', 'INVINCIBILITY', 'TRAIL_SHRINK'];
+export const POWERUP_TYPES: PowerUpType[] = ['SPEED_BOOST', 'INVINCIBILITY', 'TRAIL_SHRINK', 'EMP_SHOCKWAVE'];
 export const POWERUP_SPAWN_INTERVAL = 6; // seconds (15% faster than 7)
 export const POWERUP_DURATION = 5; // seconds
 export const POWERUP_SPEED_MULTIPLIER = 1.8; // A bit less than 2x for better control
 export const TRAIL_SHRINK_PERCENTAGE = 0.5; // Increased from 0.3 to 0.5
+export const EMP_FREEZE_DURATION = 2.5; // seconds
 
 // Initial state for Player 1 (User).
 export const INITIAL_PLAYER_1_STATE: Player = {
@@ -32,6 +33,7 @@ export const INITIAL_PLAYER_1_STATE: Player = {
   color: PLAYER_1_COLOR,
   activePowerUp: { type: null, duration: 0 },
   trailJustShrank: false,
+  frozenFor: 0,
 };
 
 // Initial state for Player 2 (AI).
@@ -44,4 +46,5 @@ export const INITIAL_PLAYER_2_STATE: Player = {
   color: PLAYER_2_COLOR,
   activePowerUp: { type: null, duration: 0 },
   trailJustShrank: false,
+  frozenFor: 0,
 };

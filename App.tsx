@@ -162,9 +162,9 @@ const App: React.FC = () => {
     setGameState('CRASHED');
     setWinner(winnerId);
     if (winnerId === 1) {
-      setScores(s => s ? ({ ...s, player1: s.player1 + 1 }) : { player1: 1, player2: 0 });
+      setScores(s => ({ ...s, player1: s.player1 + 1 }));
     } else if (winnerId === 2) {
-      setScores(s => s ? ({ ...s, player2: s.player2 + 1 }) : { player1: 0, player2: 1 });
+      setScores(s => ({ ...s, player2: s.player2 + 1 }));
     }
   }, []);
 
