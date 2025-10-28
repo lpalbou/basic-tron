@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node build-assets.js",
+    "build:local": "VITE_BASE_PATH=/ vite build && node build-assets.js",
+    "build:github": "VITE_BASE_PATH=/basic-tron/ vite build && node build-assets.js",
     "preview": "vite preview"
   },
   "dependencies": {
