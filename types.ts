@@ -2,7 +2,7 @@ import type useSoundEffects from './hooks/useSoundEffects';
 
 export type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
-export type PowerUpType = 'SPEED_BOOST' | 'INVINCIBILITY' | 'TRAIL_SHRINK';
+export type PowerUpType = 'SPEED_BOOST' | 'INVINCIBILITY' | 'TRAIL_SHRINK' | 'EMP_SHOCKWAVE';
 
 export interface PowerUp {
   id: string;
@@ -22,6 +22,7 @@ export interface Player {
     duration: number; // in seconds
   };
   trailJustShrank?: boolean;
+  frozenFor: number;
 }
 
 export type GameState = 'MENU' | 'COUNTDOWN' | 'PLAYING' | 'PAUSED' | 'CRASHED' | 'GAME_OVER';
