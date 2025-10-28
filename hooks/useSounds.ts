@@ -6,7 +6,13 @@ let audioContext: AudioContext | null = null;
 let audioBuffer: AudioBuffer | null = null;
 let loadingPromise: Promise<AudioBuffer> | null = null;
 
-const AUDIO_FILE_PATH = 'assets/neon_reverie.mp3';
+// Get the base path from Vite's import.meta.env.BASE_URL
+const getAssetPath = (path: string) => {
+  const base = (import.meta as any).env?.BASE_URL || '/';
+  return base + path;
+};
+
+const AUDIO_FILE_PATH = getAssetPath('assets/neon_reverie.mp3');
 
 const initAudio = (): Promise<AudioBuffer> => {
   // If buffer is already loaded, return it.

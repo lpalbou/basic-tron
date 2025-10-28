@@ -1,35 +1,41 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+// Get the base path from Vite's import.meta.env.BASE_URL
+const getAssetPath = (path: string) => {
+  const base = (import.meta as any).env?.BASE_URL || '/';
+  return base + path;
+};
+
 // A mapping of sound effect keys to their file paths.
 // Some keys map to an array for random selection.
 const sfxMap = {
   crashBike: [
-    'assets/fx/crash_bike1.mp3',
-    'assets/fx/crash_bike2.mp3',
+    getAssetPath('assets/fx/crash_bike1.mp3'),
+    getAssetPath('assets/fx/crash_bike2.mp3'),
   ],
   crashWall: [
-    'assets/fx/crash_wall1.mp3',
-    'assets/fx/crash_wall2.mp3',
+    getAssetPath('assets/fx/crash_wall1.mp3'),
+    getAssetPath('assets/fx/crash_wall2.mp3'),
   ],
   wallProximity: [
-    'assets/fx/energy_wall1.mp3',
-    'assets/fx/energy_wall2.mp3',
-    'assets/fx/energy_wall3.mp3',
-    'assets/fx/energy_wall4.mp3'
+    getAssetPath('assets/fx/energy_wall1.mp3'),
+    getAssetPath('assets/fx/energy_wall2.mp3'),
+    getAssetPath('assets/fx/energy_wall3.mp3'),
+    getAssetPath('assets/fx/energy_wall4.mp3')
   ],
   engine : [
-    'assets/fx/engine1.mp3',
-    'assets/fx/engine2.mp3',
-    'assets/fx/engine3.mp3',
-    'assets/fx/engine4.mp3'
+    getAssetPath('assets/fx/engine1.mp3'),
+    getAssetPath('assets/fx/engine2.mp3'),
+    getAssetPath('assets/fx/engine3.mp3'),
+    getAssetPath('assets/fx/engine4.mp3')
   ],
-  invincible: 'assets/fx/invincible.mp3',
-  trailShrink: 'assets/fx/trail_shrink.mp3',
-  emp_shockwave: 'assets/fx/emp_shockwave.mp3',
+  invincible: getAssetPath('assets/fx/invincible.mp3'),
+  trailShrink: getAssetPath('assets/fx/trail_shrink.mp3'),
+  emp_shockwave: getAssetPath('assets/fx/emp_shockwave.mp3'),
   turn: [
-    'assets/fx/turn1.mp3',
-    'assets/fx/turn2.mp3',
+    getAssetPath('assets/fx/turn1.mp3'),
+    getAssetPath('assets/fx/turn2.mp3'),
   ],
 };
 
