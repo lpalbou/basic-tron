@@ -21,9 +21,10 @@ const directionToRotation = new Map<Direction, number>([
   ['RIGHT', -Math.PI / 2],
 ]);
 
-const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' | 'playerRef' | 'gameState'>> = ({
+const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' | 'playerRef'> & { isPaused: boolean }> = ({
     savedCameraState,
-    onCameraChange
+    onCameraChange,
+    isPaused
 }) => {
     const controlsRef = useRef<any>(null!);
     const { camera } = useThree();
@@ -49,12 +50,15 @@ const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' 
         <OrbitControls
           ref={controlsRef}
           onChange={handleControlsChange}
-          minPolarAngle={0.1}
-          maxPolarAngle={Math.PI / 2 - 0.1}
-          enablePan={false}
-          minDistance={30}
-          maxDistance={150}
+          enabled={isPaused} // Only enable controls when paused
+          minPolarAngle={isPaused ? 0 : 0.1} // Allow full rotation when paused
+          maxPolarAngle={isPaused ? Math.PI : Math.PI / 2 - 0.1}
+          enablePan={isPaused} // Enable panning when paused
+          minDistance={isPaused ? 5 : 30} // Allow closer zoom when paused
+          maxDistance={isPaused ? 300 : 150} // Allow further zoom when paused
           zoomSpeed={0.5}
+          panSpeed={1.0}
+          rotateSpeed={0.8}
         />
     );
 };
@@ -102,6 +106,12 @@ export const DynamicCamera: React.FC<DynamicCameraProps> = ({
 
   useFrame((state, delta) => {
     time.current = state.clock.elapsedTime;
+    
+    // In pause mode with THIRD_PERSON view, let OrbitControls handle the camera completely
+    const isPaused = gameState === 'PAUSED';
+    if (isPaused && cameraView === 'THIRD_PERSON') {
+      return; // OrbitControls will handle camera positioning
+    }
     
     if (cameraView !== 'THIRD_PERSON') {
       const p = playerRef.current;
@@ -167,7 +177,8 @@ export const DynamicCamera: React.FC<DynamicCameraProps> = ({
         currentShake += (trailShakeIntensity.current * (Math.sin(time.current * 60) + Math.sin(time.current * 80))) / 2;
     }
 
-    if (currentShake > 0) {
+    // Apply shake (but not when paused)
+    if (currentShake > 0 && !isPaused) {
         camera.position.x += MathUtils.randFloatSpread(currentShake);
         camera.position.y += MathUtils.randFloatSpread(currentShake);
         camera.position.z += MathUtils.randFloatSpread(currentShake);
@@ -178,6 +189,7 @@ export const DynamicCamera: React.FC<DynamicCameraProps> = ({
     <ThirdPersonCameraControls 
         savedCameraState={savedCameraState}
         onCameraChange={onCameraChange}
+        isPaused={gameState === 'PAUSED'}
     />
   ) : null;
 };

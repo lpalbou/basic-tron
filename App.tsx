@@ -10,6 +10,8 @@ import useOrientation from './hooks/useOrientation';
 import { OrientationLock } from './components/OrientationLock';
 import { SpeedIndicator } from './components/SpeedIndicator';
 import { PauseButton } from './components/PauseButton';
+import { ScreenshotButton } from './components/ScreenshotButton';
+import { PauseControls } from './components/PauseControls';
 
 const getDeviceType = (): DeviceType => {
     const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -95,6 +97,9 @@ const App: React.FC = () => {
       }
 
       if (key === 'v') {
+        // Only allow camera switching when paused or not playing
+        if (gameState === 'PLAYING') return;
+        
         setCameraView(v => {
           if (v === 'THIRD_PERSON') return 'FOLLOW';
           if (v === 'FOLLOW') return 'FIRST_PERSON';
@@ -204,6 +209,8 @@ const App: React.FC = () => {
       {(gameState === 'PLAYING' || gameState === 'PAUSED') && (
         <PauseButton gameState={gameState} />
       )}
+      <ScreenshotButton gameState={gameState} />
+      <PauseControls gameState={gameState} cameraView={cameraView} deviceType={deviceType} />
       <div className="absolute top-4 left-4 z-30">
         <button
           onClick={() => setShowControls(s => !s)}

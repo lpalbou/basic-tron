@@ -28,6 +28,7 @@ import { WallSparks } from './WallSparks';
 import { TrailSparks } from './TrailSparks';
 import { SfxKey } from '../hooks/useSoundEffects';
 import { Shockwave } from './Shockwave';
+import { ScreenshotHandler } from './ScreenshotHandler';
 
 interface GameCanvasProps {
   onGameOver: (winner: number | null) => void;
@@ -559,6 +560,8 @@ const Scene: React.FC<GameCanvasProps> = ({
         gameState={gameState}
       />
 
+      <ScreenshotHandler />
+
       <EffectComposer>
         <Bloom intensity={1.5} luminanceThreshold={0.25} luminanceSmoothing={0.9} height={1080} />
         <Noise
@@ -573,7 +576,16 @@ const Scene: React.FC<GameCanvasProps> = ({
 
 export const GameCanvas: React.FC<GameCanvasProps> = (props) => {
   return (
-    <Canvas shadows camera={{ fov: 60 }}>
+    <Canvas 
+      shadows 
+      camera={{ fov: 60 }}
+      gl={{ 
+        preserveDrawingBuffer: true,
+        antialias: true,
+        alpha: false,
+        powerPreference: "high-performance"
+      }}
+    >
       <Suspense fallback={null}>
         <Scene {...props} />
       </Suspense>

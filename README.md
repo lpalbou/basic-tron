@@ -30,6 +30,7 @@ This README is organized into **two distinct parts**:
 *Leveling up the development process with next-gen AI tools and smooth local deployment*
 - Building features using Cursor and Claude 4 Sonnet for rapid prototyping and smarter code assistance
 - Refined workflow: from idea to implementation, with smoother iteration and debugging
+- Significantly lighter on resources: With Google AI Studio, my MBP M4 Max’s CPU would spike to 500% usage. Now, with local development and deployment, it rarely exceeds 50%.
 - Easily run your project locally for testing using  
   ```
   python -m http.server 8080
@@ -223,11 +224,21 @@ This contains everything you need to run your app locally.
 # Install dependencies
 npm install
 
-# Set up environment (optional)
-# Add GEMINI_API_KEY to .env.local
-
 # Start development server
 npm run dev
 ```
 
 # 🤖 **PART III: BETTER VIBE CODING**
+
+This project is now being developed using **Cursor** with **Claude Sonnet 4**, enabling rapid iteration and intelligent code assistance.
+
+## Version Tracking
+
+Current version: **v0.2.0** (displayed in the game menu)
+
+We maintain a detailed [CHANGELOG.md](./CHANGELOG.md) to track all improvements and features as we continue development. Each release documents:
+- New features and enhancements
+- Bug fixes and improvements  
+- Technical changes and optimizations
+
+The version is managed centrally in `constants/version.ts` and displayed discreetly in the game's startup menu.
