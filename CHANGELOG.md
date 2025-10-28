@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2025-10-28
+
+### Fixed
+- Production deployment MIME type errors by implementing flexible base path configuration
+- Added environment-specific build commands (`build:github`, `build:local`)
+
+### Technical
+- Enhanced Vite configuration with `VITE_BASE_PATH` environment variable support
+- Added deployment documentation and troubleshooting guide
+
 ## [0.2.0] - 2025-10-28
 
 ### Added

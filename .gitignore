@@ -12,3 +12,5 @@ public/*
 # Ensure no nested tracking
 **/dist/
 **/public/
+
+tmp/
