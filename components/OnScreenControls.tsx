@@ -1,5 +1,5 @@
 import React from 'react';
-import type { DeviceType } from '../types';
+import type { DeviceType, CameraView } from '../types';
 
 // Helper to dispatch keyboard events programmatically. This allows the UI buttons
 // to "pretend" to be a real keyboard, simplifying the integration with existing logic.
@@ -18,8 +18,12 @@ const ControlButton: React.FC<{
       e.preventDefault(); // Prevent screen zoom and other default behaviors
       onClick();
     }}
-    // Also handle mouse down for easier desktop debugging
-    onMouseDown={(e) => {
+    // Handle click for desktop/mouse users (but not onMouseDown to avoid double-firing on mobile)
+    onClick={(e) => {
+      // Only handle click if it's not a touch event (to avoid double-firing on mobile)
+      if (e.detail === 0) { // detail === 0 indicates keyboard/programmatic click, not mouse
+        return;
+      }
       e.preventDefault();
       onClick();
     }}
@@ -31,8 +35,11 @@ const ControlButton: React.FC<{
   </button>
 );
 
-export const OnScreenControls: React.FC<{ deviceType: DeviceType }> = ({ deviceType }) => {
+export const OnScreenControls: React.FC<{ deviceType: DeviceType; cameraView: CameraView }> = ({ deviceType, cameraView }) => {
   const isTablet = deviceType === 'tablet';
+  
+  // In FOLLOW and FIRST_PERSON modes, only left/right turns are available
+  const showOnlyLeftRight = cameraView === 'FOLLOW' || cameraView === 'FIRST_PERSON';
 
   // --- Common button sizes ---
   const dpadButtonClass = isTablet ? "w-20 h-20 text-4xl" : "w-16 h-16 text-3xl";
@@ -48,6 +55,19 @@ export const OnScreenControls: React.FC<{ deviceType: DeviceType }> = ({ deviceT
   const tabletStyle = isTablet ? { bottom: 'calc(5rem + 8vh)' } : {};
 
   const DPad = () => {
+    if (showOnlyLeftRight) {
+      // For FOLLOW and FIRST_PERSON modes, show only left/right controls in a horizontal layout
+      const leftRightContainer = isTablet 
+        ? "absolute left-4 flex gap-8 pointer-events-auto"
+        : "absolute bottom-20 left-4 flex gap-4 pointer-events-auto";
+      return (
+        <div className={leftRightContainer} style={tabletStyle}>
+          <ControlButton onClick={() => dispatchKeyEvent('ArrowLeft')} ariaLabel="Turn left" className={dpadButtonClass}>←</ControlButton>
+          <ControlButton onClick={() => dispatchKeyEvent('ArrowRight')} ariaLabel="Turn right" className={dpadButtonClass}>→</ControlButton>
+        </div>
+      );
+    }
+
     if (isTablet) {
       // Tablet uses a grid layout for a wider D-pad.
       const tabletDpadContainer = "absolute left-4 grid grid-cols-3 grid-rows-3 gap-px w-60 h-60 pointer-events-auto";

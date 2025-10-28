@@ -199,7 +199,7 @@ const App: React.FC = () => {
         />
       )}
       {showControls && (gameState === 'PLAYING' || gameState === 'COUNTDOWN' || gameState === 'PAUSED') && (
-        <OnScreenControls deviceType={deviceType} />
+        <OnScreenControls deviceType={deviceType} cameraView={cameraView} />
       )}
       {(gameState === 'PLAYING' || gameState === 'PAUSED') && (
         <PauseButton gameState={gameState} />

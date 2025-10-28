@@ -1,0 +1,14 @@
+/* Basic CSS for the Tron game - styles are mostly handled by Tailwind and inline styles */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  color: #fff;
+  overflow: hidden;
+  font-family: 'system-ui', 'sans-serif';
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}

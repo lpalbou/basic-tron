@@ -19,12 +19,22 @@ This README is organized into **two distinct parts**:
 - Core gameplay mechanics and power-ups
 - How to play and run locally
 
-### 🤖 **[Part II: The AI Experiment](#-part-ii-the-ai-experiment)** 
+### 🤖 **[Part II: The AI Experiment](#-part-ii-the-google-ai-experiment)** 
 *Technical exploration of AI-assisted development and content creation*
 - Google AI Studio development experience
 - AI-generated music and sound effects
 - Lessons learned and technical insights
 - Comparison with other AI tools
+
+### ⚡ **[Part III: Better Vibe Coding](#-part-iii-better-vibe-coding)**
+*Leveling up the development process with next-gen AI tools and smooth local deployment*
+- Building features using Cursor and Claude 4 Sonnet for rapid prototyping and smarter code assistance
+- Refined workflow: from idea to implementation, with smoother iteration and debugging
+- Easily run your project locally for testing using  
+  ```
+  python -m http.server 8080
+  ```
+  to serve the build for quick device testing
 
 ---
 
@@ -149,7 +159,7 @@ Inspired by the legendary **Light Cycles** segment from the [1982 Tron arcade ga
 
 </div>
 
-# 🤖 **PART II: THE AI EXPERIMENT**
+# 🤖 **PART II: THE GOOGLE AI STUDIO EXPERIMENT**
 
 ## 🎬 **Project Genesis**
 
@@ -219,3 +229,5 @@ npm install
 # Start development server
 npm run dev
 ```
+
+# 🤖 **PART III: BETTER VIBE CODING**
