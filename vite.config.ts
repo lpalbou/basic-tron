@@ -29,6 +29,22 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         }
       },
-      publicDir: 'assets',
+      publicDir: false, // No public folder - all assets handled by build-assets.js
+      build: {
+        rollupOptions: {
+          output: {
+            // Generate consistent filenames without hashes
+            entryFileNames: 'assets/index.js',
+            chunkFileNames: 'assets/[name].js',
+            assetFileNames: (assetInfo) => {
+              // CSS files go to assets/index.css, other assets keep their names
+              if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+                return 'assets/index.css';
+              }
+              return 'assets/[name].[ext]';
+            }
+          }
+        }
+      }
     };
 });

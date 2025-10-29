@@ -1,7 +1,7 @@
 {
   "name": "neon-cycle-duel",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,13 +11,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.4.0",
-    "three": "^0.180.0",
     "@react-three/postprocessing": "^3.0.4",
-    "postprocessing": "^6.36.0"
+    "postprocessing": "^6.36.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

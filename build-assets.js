@@ -7,46 +7,52 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// After Vite build, move assets to correct structure
-const distDir = path.join(__dirname, 'dist');
-const assetsDir = path.join(distDir, 'assets');
-
-// Ensure assets directory exists
-if (!fs.existsSync(assetsDir)) {
-  fs.mkdirSync(assetsDir, { recursive: true });
+// Simple function to copy directory recursively
+function copyDir(src, dest) {
+  if (!fs.existsSync(src)) return;
+  
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+  
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
 }
 
-// Move fx folder to assets/fx if it exists at root level
-const fxSrc = path.join(distDir, 'fx');
-const fxDest = path.join(assetsDir, 'fx');
-if (fs.existsSync(fxSrc)) {
-  if (fs.existsSync(fxDest)) {
-    fs.rmSync(fxDest, { recursive: true });
+// Copy entire assets folder to dist/assets (merge with Vite's generated assets)
+const assetsSource = path.join(__dirname, 'assets');
+const assetsDestination = path.join(__dirname, 'dist', 'assets');
+
+if (fs.existsSync(assetsSource)) {
+  // Ensure destination exists
+  if (!fs.existsSync(assetsDestination)) {
+    fs.mkdirSync(assetsDestination, { recursive: true });
   }
-  fs.renameSync(fxSrc, fxDest);
-  console.log('Moved fx/ to assets/fx/');
+  
+  // Copy our assets folder content into dist/assets (merge, don't replace)
+  copyDir(assetsSource, assetsDestination);
+  console.log('Copied assets/ folder to dist/assets/');
+} else {
+  console.log('No assets/ folder found, skipping copy');
 }
 
-// Move audio files to assets/
-const audioFiles = ['neon_reverie.mp3'];
-audioFiles.forEach(file => {
-  const src = path.join(distDir, file);
-  const dest = path.join(assetsDir, file);
-  if (fs.existsSync(src)) {
-    fs.renameSync(src, dest);
-    console.log(`Moved ${file} to assets/`);
-  }
-});
-
-// Move image files to assets/
-const imageFiles = ['Follow.jpg', 'FPV.jpg', 'MobileUI.jpg', 'TopDown.jpg'];
-imageFiles.forEach(file => {
-  const src = path.join(distDir, file);
-  const dest = path.join(assetsDir, file);
-  if (fs.existsSync(src)) {
-    fs.renameSync(src, dest);
-    console.log(`Moved ${file} to assets/`);
-  }
-});
+// Create favicon.svg if it doesn't exist
+const faviconPath = path.join(assetsDestination, 'favicon.svg');
+if (!fs.existsSync(faviconPath)) {
+  fs.mkdirSync(assetsDestination, { recursive: true });
+  const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" style="dominant-baseline:central;text-anchor:middle;font-size:90px;">🎮</text></svg>`;
+  fs.writeFileSync(faviconPath, faviconSvg);
+  console.log('Created favicon.svg');
+}
 
 console.log('Asset organization complete!');

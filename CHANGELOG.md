@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.2] - 2025-10-28
+
+### Added
+- High-quality 3D bike model with PBR materials and textures
+- Realistic bike geometry replacing basic geometric shapes
+- Python script for precise model coordinate transformation
+- Enhanced visual fidelity with metallic surfaces and detailed textures
+- Error boundary and fallback system for 3D model loading failures
+- Automatic favicon generation in build process
+- Normal mapping with full intensity for surface detail
+- Ambient occlusion mapping for realistic shading
+
+### Changed
+- Replaced simple box/sphere bike geometry with detailed 3D model
+- Optimized texture loading with compressed PBR material maps
+- Improved player color system to work with complex materials
+
+### Fixed
+- 3D model assets now properly copied to dist/assets/models/ during build
+- Added graceful fallback to basic geometry when 3D model fails to load
+- Fixed missing favicon.svg in production builds
+- Eliminated random hash filenames - now generates consistent index.js and index.css
+- Resolved MIME type errors caused by changing asset filenames
+- Corrected 3D bike model center of gravity to match original LightCycle positioning
+- Fixed bike model scaling and ground positioning for consistent gameplay
+- Fixed bike model floating above ground - now sits properly at y=0
+- Fixed bike model backwards orientation - now faces forward with 180° rotation
+- Enhanced normal mapping and material lighting response for better visual quality
+
+### Technical
+- Integrated Three.js OBJLoader for 3D model support
+- Pre-processed 3D model coordinates to match game coordinate system
+- Implemented dynamic material color override system
+- Added random geometry attributes for derezz shader compatibility
+- Simplified build pipeline to copy entire assets/ folder automatically
+- Added Suspense and ErrorBoundary for robust 3D model loading
+- Enhanced asset management system for future extensibility
+- Configured Vite to generate consistent filenames (index.js, index.css) for better deployment reliability
+- Created Python tooling for 3D model coordinate transformation and validation
+
 ## [0.2.1] - 2025-10-28
 
 ### Fixed

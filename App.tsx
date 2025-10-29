@@ -97,9 +97,6 @@ const App: React.FC = () => {
       }
 
       if (key === 'v') {
-        // Only allow camera switching when paused or not playing
-        if (gameState === 'PLAYING') return;
-        
         setCameraView(v => {
           if (v === 'THIRD_PERSON') return 'FOLLOW';
           if (v === 'FOLLOW') return 'FIRST_PERSON';

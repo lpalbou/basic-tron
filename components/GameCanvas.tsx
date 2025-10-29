@@ -513,9 +513,93 @@ const Scene: React.FC<GameCanvasProps> = ({
 
   return (
     <>
-      <ambientLight intensity={0.1} />
-      <hemisphereLight intensity={0.5} color="#00ffff" groundColor="#ff5500" />
+      {/* SOTA PBR Lighting System for Enhanced 3D Rendering */}
+      
+      {/* Ambient light - very low for dramatic PBR effect */}
+      <ambientLight intensity={0.05} color="#ffffff" />
+      
+      {/* Environment hemisphere light for realistic ambient */}
+      <hemisphereLight 
+        intensity={0.2} 
+        color="#87CEEB" 
+        groundColor="#1a1a2e" 
+      />
+      
+      {/* Key Light - Primary directional light with high-quality shadows */}
+      <directionalLight
+        position={[25, 30, 20]}
+        intensity={3.0}
+        color="#ffffff"
+        castShadow
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
+        shadow-camera-near={0.1}
+        shadow-camera-far={100}
+        shadow-camera-left={-60}
+        shadow-camera-right={60}
+        shadow-camera-top={60}
+        shadow-camera-bottom={-60}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.02}
+      />
+      
+      {/* Fill Light - Softer light from opposite side for detail visibility */}
+      <directionalLight
+        position={[-20, 20, 15]}
+        intensity={1.2}
+        color="#4169E1"
+        castShadow={false}
+      />
+      
+      {/* Rim Light - Strong backlight for edge definition and PBR highlights */}
+      <directionalLight
+        position={[0, 15, -30]}
+        intensity={2.0}
+        color="#FF6B35"
+        castShadow={false}
+      />
+      
+      {/* Side accent lights for enhanced normal map visibility */}
+      <pointLight
+        position={[20, 10, 0]}
+        intensity={1.5}
+        color="#00CED1"
+        distance={40}
+        decay={2}
+        castShadow={false}
+      />
+      
+      <pointLight
+        position={[-20, 10, 0]}
+        intensity={1.2}
+        color="#FF1493"
+        distance={40}
+        decay={2}
+        castShadow={false}
+      />
+      
+      {/* Overhead accent for metallic reflections */}
+      <pointLight
+        position={[0, 25, 0]}
+        intensity={0.8}
+        color="#FFD700"
+        distance={50}
+        decay={2}
+        castShadow={false}
+      />
+      
       <Arena gridSize={GRID_SIZE} scores={scores} />
+      
+      {/* Enhanced ground plane for shadow reception */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
+        <planeGeometry args={[200, 200]} />
+        <meshStandardMaterial 
+          color="#0a0a0a" 
+          roughness={0.8}
+          metalness={0.1}
+        />
+      </mesh>
+      
       <DistantData />
       
       <GameLoop 

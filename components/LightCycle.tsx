@@ -5,6 +5,7 @@ import { Group, Vector3, PointLight, Euler, Mesh, BufferAttribute, Material, Mat
 import type { MeshStandardMaterial, BufferGeometry } from 'three';
 import type { Player, GameState } from '../types';
 import { createDerezzMaterial } from './DerezzMaterial';
+import { BikeModel3D } from './BikeModel3D';
 
 const directionToRotation = new Map<Player['direction'], number>([
   ['UP', 0],
@@ -25,56 +26,6 @@ const addRandomAttribute = (geometry: BufferGeometry) => {
     }
 };
 
-const Wheel: React.FC<{ playerRef: React.MutableRefObject<Player>; position: [number, number, number]; gameState: GameState }> = ({ playerRef, position, gameState }) => {
-  const innerSpokesRef = useRef<Group>(null!);
-  const outerRingMaterialRef = useRef<MeshStandardMaterial>(null!);
-  const { color } = playerRef.current;
-
-  useFrame((_, delta) => {
-    if (gameState !== 'PLAYING' || playerRef.current.frozenFor > 0) return;
-
-    if (innerSpokesRef.current) {
-      innerSpokesRef.current.rotation.x -= delta * 12;
-    }
-    if (outerRingMaterialRef.current) {
-      const p = playerRef.current;
-      const powerUpActive = p.activePowerUp.type !== null && p.activePowerUp.type !== 'TRAIL_SHRINK';
-      outerRingMaterialRef.current.emissiveIntensity = powerUpActive ? 8 : 4;
-    }
-  });
-
-  const wheelRadius = 0.8; 
-  const ringThickness = 0.2;
-  
-  return (
-    <group position={position}>
-      <mesh rotation={[0, Math.PI / 2, 0]}>
-        <torusGeometry args={[wheelRadius, ringThickness, 16, 64]} />
-        <meshStandardMaterial
-          ref={outerRingMaterialRef}
-          color={color}
-          emissive={color}
-          emissiveIntensity={4}
-          toneMapped={false}
-        />
-      </mesh>
-      <group ref={innerSpokesRef} rotation={[0, Math.PI / 2, 0]}>
-         <mesh>
-            <boxGeometry args={[wheelRadius * 1.85, 0.08, 0.24]} />
-            <meshStandardMaterial color="#333333" metalness={0.9} roughness={0.2} />
-         </mesh>
-         <mesh rotation={[0, 0, Math.PI / 3]}>
-            <boxGeometry args={[wheelRadius * 1.85, 0.08, 0.24]} />
-            <meshStandardMaterial color="#333333" metalness={0.9} roughness={0.2} />
-         </mesh>
-         <mesh rotation={[0, 0, -Math.PI / 3]}>
-            <boxGeometry args={[wheelRadius * 1.85, 0.08, 0.24]} />
-            <meshStandardMaterial color="#333333" metalness={0.9} roughness={0.2} />
-         </mesh>
-      </group>
-    </group>
-  );
-};
 
 export const LightCycle: React.FC<{ player: React.MutableRefObject<Player>; gameState: GameState }> = ({ player, gameState }) => {
   const groupRef = useRef<Group>(null!);
@@ -250,28 +201,7 @@ export const LightCycle: React.FC<{ player: React.MutableRefObject<Player>; game
   return (
     <>
       <group ref={groupRef} castShadow>
-        <mesh position={[0, 0.4, 0.1]}>
-            <boxGeometry args={[2.1, 0.3, 4.2]} />
-            <meshStandardMaterial color="#101010" metalness={0.9} roughness={0.1} />
-        </mesh>
-        <mesh position={[0, 0.7, -2.0]} rotation={[0.4, 0, 0]}>
-            <boxGeometry args={[2.1, 0.7, 0.7]} />
-             <meshStandardMaterial color="#101010" metalness={0.9} roughness={0.1} />
-        </mesh>
-        <mesh position={[0, 0.7, 2.0]} rotation={[-0.2, 0, 0]}>
-            <boxGeometry args={[2.1, 0.5, 0.8]} />
-            <meshStandardMaterial color="#101010" metalness={0.9} roughness={0.1} />
-        </mesh>
-        <mesh position={[0, 0.9, 0.5]}>
-            <boxGeometry args={[1.8, 0.6, 0.5]} />
-            <meshStandardMaterial color="#050505" metalness={0.8} roughness={0.3} />
-        </mesh>
-        <mesh position={[0, 1.35, 0.25]}>
-            <sphereGeometry args={[0.75, 16, 16]} />
-             <meshStandardMaterial color="#151515" metalness={0.95} roughness={0.1} />
-        </mesh>
-        <Wheel playerRef={player} position={[0, 0.7, -2.0]} gameState={gameState} />
-        <Wheel playerRef={player} position={[0, 0.7, 2.0]} gameState={gameState} />
+        <BikeModel3D player={player} gameState={gameState} />
       </group>
       <pointLight 
         ref={lightRef} 

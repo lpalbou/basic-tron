@@ -2,7 +2,7 @@
 import React, { useRef, useCallback, useLayoutEffect, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { Vector3, Euler, MathUtils } from 'three';
+import { Vector3, Euler, MathUtils, MOUSE } from 'three';
 import type { Player, CameraView, CameraState, Direction, GameState } from '../types';
 
 interface DynamicCameraProps {
@@ -54,11 +54,17 @@ const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' 
           minPolarAngle={isPaused ? 0 : 0.1} // Allow full rotation when paused
           maxPolarAngle={isPaused ? Math.PI : Math.PI / 2 - 0.1}
           enablePan={isPaused} // Enable panning when paused
-          minDistance={isPaused ? 5 : 30} // Allow closer zoom when paused
-          maxDistance={isPaused ? 300 : 150} // Allow further zoom when paused
+          minDistance={isPaused ? 1 : 30} // Allow much closer zoom when paused
+          maxDistance={isPaused ? 1000 : 150} // Allow much further zoom when paused
           zoomSpeed={0.5}
           panSpeed={1.0}
           rotateSpeed={0.8}
+          // Explicitly set mouse button mappings
+          mouseButtons={{
+            LEFT: MOUSE.ROTATE,   // LEFT mouse button for rotation
+            MIDDLE: MOUSE.DOLLY,  // MIDDLE mouse button for zoom
+            RIGHT: MOUSE.PAN      // RIGHT mouse button for panning
+          }}
         />
     );
 };

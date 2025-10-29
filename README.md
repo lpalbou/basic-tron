@@ -32,8 +32,10 @@ This README is organized into **two distinct parts**:
 - Refined workflow: from idea to implementation, with smoother iteration and debugging
 - Significantly lighter on resources: With Google AI Studio, my MBP M4 Max’s CPU would spike to 500% usage. Now, with local development and deployment, it rarely exceeds 50%.
 - Easily run your project locally for testing using  
-  ```
-  python -m http.server 8080
+  ```bash
+  npm run build:local
+  cd dist
+  lsof -ti:8080 | xargs kill -9 && python -m http.server 8080
   ```
   to serve the build for quick device testing
 
@@ -234,7 +236,7 @@ This project is now being developed using **Cursor** with **Claude Sonnet 4**, e
 
 ## Version Tracking
 
-Current version: **v0.2.0** (displayed in the game menu)
+Current version: **v0.2.2** (displayed in the game menu)
 
 We maintain a detailed [CHANGELOG.md](./CHANGELOG.md) to track all improvements and features as we continue development. Each release documents:
 - New features and enhancements
@@ -242,3 +244,33 @@ We maintain a detailed [CHANGELOG.md](./CHANGELOG.md) to track all improvements 
 - Technical changes and optimizations
 
 The version is managed centrally in `constants/version.ts` and displayed discreetly in the game's startup menu.
+
+## Open Source & Contributions
+
+This project embraces open source development and community contributions. We believe in:
+
+- **Transparent Development**: All code changes documented in version control
+- **Proper Attribution**: Full credit to all contributors and asset creators
+- **Community Assets**: Leveraging high-quality community-created content
+- **AI-Assisted Development**: Using modern AI tools to accelerate development while maintaining code quality
+
+### Acknowledgments
+
+We gratefully acknowledge all contributors to this project:
+
+- **Asset Creators**: 3D artists, musicians, and sound designers who share their work
+- **Open Source Libraries**: The incredible ecosystem of web development tools
+- **AI Technology**: Suno AI for music, ElevenLabs for sound effects, Claude for development assistance
+- **Community**: The broader game development and web development communities
+
+For detailed attribution and licenses, see [ACKNOWLEDGMENTS.md](./ACKNOWLEDGMENTS.md).
+
+### Contributing
+
+Contributions are welcome! Whether it's:
+- Bug reports and feature requests
+- Code improvements and optimizations  
+- Asset contributions (models, textures, sounds)
+- Documentation enhancements
+
+Please check our [CHANGELOG.md](./CHANGELOG.md) for recent changes and [ROADMAP.md](./ROADMAP.md) for planned features.
