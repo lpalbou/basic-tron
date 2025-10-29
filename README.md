@@ -30,14 +30,14 @@ This README is organized into **two distinct parts**:
 *Leveling up the development process with next-gen AI tools and smooth local deployment*
 - Building features using Cursor and Claude 4 Sonnet for rapid prototyping and smarter code assistance
 - Refined workflow: from idea to implementation, with smoother iteration and debugging
-- Significantly lighter on resources: With Google AI Studio, my MBP M4 Max’s CPU would spike to 500% usage. Now, with local development and deployment, it rarely exceeds 50%.
-- Easily run your project locally for testing using  
+- Significantly lighter on resources: With Google AI Studio, my MBP M4 Max's CPU would spike to 500% usage. Now, with local development and deployment, it rarely exceeds 50%.
+- **Unified build system**: One command works for both local testing and production deployment
   ```bash
-  npm run build:local
-  cd dist
-  lsof -ti:8080 | xargs kill -9 && python -m http.server 8080
+  npm run build    # Unified production build
+  npm run preview  # Test at http://localhost:4173/basic-tron/
   ```
-  to serve the build for quick device testing
+- **Fixed Issues**: No more MIME type errors, Tailwind CDN warnings, or external dependency risks
+- **Production-ready**: All dependencies bundled, CSS optimized (6.4KB vs 47KB CDN)
 
 ---
 

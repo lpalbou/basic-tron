@@ -54,22 +54,25 @@ const FallbackBike: React.FC<BikeModel3DProps> = ({ player }) => {
 const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
   const modelRef = useRef<Group>(null!);
   const [modelLoaded, setModelLoaded] = useState(false);
-  
+
+  // Get base URL for asset paths (handles /basic-tron/ prefix)
+  const BASE_URL = import.meta.env.BASE_URL;
+
   // Load MTL materials first
-  const materials = useLoader(MTLLoader, '/assets/models/Neutron_Bike_low.mtl');
-  
+  const materials = useLoader(MTLLoader, `${BASE_URL}assets/models/Neutron_Bike_low.mtl`);
+
   // Load OBJ model (materials will be applied manually)
-  const model = useLoader(OBJLoader, '/assets/models/Neutron_Bike_low.obj');
-  
+  const model = useLoader(OBJLoader, `${BASE_URL}assets/models/Neutron_Bike_low.obj`);
+
   // Load PBR textures for enhanced rendering
   const [baseColorTexture, normalTexture, normalOpenGLTexture, metallicTexture, roughnessTexture, aoTexture, heightTexture] = useLoader(TextureLoader, [
-    '/assets/models/textures/neutron_Bike_Base_color.png',
-    '/assets/models/textures/neutron_Bike_Normal.png',
-    '/assets/models/textures/neutron_Bike_Normal_OpenGL.png',
-    '/assets/models/textures/neutron_Bike_Metallic.png',
-    '/assets/models/textures/neutron_Bike_Roughness.png',
-    '/assets/models/textures/neutron_Bike_Mixed_AO.png',
-    '/assets/models/textures/neutron_Bike_Height.png'
+    `${BASE_URL}assets/models/textures/neutron_Bike_Base_color.png`,
+    `${BASE_URL}assets/models/textures/neutron_Bike_Normal.png`,
+    `${BASE_URL}assets/models/textures/neutron_Bike_Normal_OpenGL.png`,
+    `${BASE_URL}assets/models/textures/neutron_Bike_Metallic.png`,
+    `${BASE_URL}assets/models/textures/neutron_Bike_Roughness.png`,
+    `${BASE_URL}assets/models/textures/neutron_Bike_Mixed_AO.png`,
+    `${BASE_URL}assets/models/textures/neutron_Bike_Height.png`
   ]);
 
   // SOTA PBR Material Setup

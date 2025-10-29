@@ -4,15 +4,14 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    
-    // CRITICAL: Base path configuration for deployment
-    // Use VITE_BASE_PATH environment variable or default based on mode
-    // Examples:
-    //   npm run build                    -> base: '/' (local/preview)
-    //   VITE_BASE_PATH=/basic-tron/ npm run build -> base: '/basic-tron/' (GitHub Pages)
-    //   VITE_BASE_PATH=/ npm run build   -> base: '/' (custom domain)
-    const base = env.VITE_BASE_PATH || (mode === 'production' ? '/basic-tron/' : '/');
-    
+
+    // UNIFIED BASE PATH: Always use /basic-tron/ for consistency
+    // This works for both:
+    //   - Local: http://localhost:3000/basic-tron/
+    //   - Production: https://www.lpalbou.info/basic-tron/
+    // Override only if explicitly needed via VITE_BASE_PATH environment variable
+    const base = env.VITE_BASE_PATH || '/basic-tron/';
+
     return {
       base,
       server: {
