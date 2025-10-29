@@ -189,7 +189,7 @@ const App: React.FC = () => {
       {speedMessage && <SpeedIndicator message={speedMessage.text} messageKey={speedMessage.key} />}
       {gameState !== 'MENU' && (
         <GameCanvas
-          key={gameId}
+          gameId={gameId}
           onGameOver={handleGameOver}
           gameState={gameState}
           speedMultiplier={speedMultiplier}
