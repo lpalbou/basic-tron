@@ -496,26 +496,10 @@ const Scene: React.FC<GameCanvasProps> = ({
         }
       };
 
+      // Mobile controls dispatch keyboard events via OnScreenControls buttons
+      // No need to handle touch-tap or touch-swipe events
       if (detail.type === 'keyboard') {
         handleKeyEvent(detail.key);
-      } else if (detail.type === 'touch-tap') {
-        const turn = detail.x < window.innerWidth / 2 ? 'LEFT' : 'RIGHT';
-        const newDirection = getTurnedDirection(p1.direction, turn);
-        // CRITICAL: Prevent 180-degree U-turns from rapid taps
-        const isOpposite = (p1.direction === 'UP' && newDirection === 'DOWN') ||
-                           (p1.direction === 'DOWN' && newDirection === 'UP') ||
-                           (p1.direction === 'LEFT' && newDirection === 'RIGHT') ||
-                           (p1.direction === 'RIGHT' && newDirection === 'LEFT');
-        if (!isOpposite) p1.direction = newDirection;
-      } else if (detail.type === 'touch-swipe') {
-        const { start, end } = detail;
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
-          const newDirection = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'RIGHT' : 'LEFT') : (dy > 0 ? 'DOWN' : 'UP');
-          const isOpposite = (p1.direction === 'UP' && newDirection === 'DOWN') || (p1.direction === 'DOWN' && newDirection === 'UP') || (p1.direction === 'LEFT' && newDirection === 'RIGHT') || (p1.direction === 'RIGHT' && newDirection === 'LEFT');
-          if (!isOpposite) p1.direction = newDirection;
-        }
       }
 
       if (p1.direction !== oldDirection) {

@@ -112,34 +112,14 @@ const App: React.FC = () => {
       }
     };
 
-    let touchStart: { x: number; y: number } | null = null;
-    const handleTouchStart = (e: TouchEvent) => {
-        if (gameState !== 'PLAYING' || e.touches.length === 0) return;
-        touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-
-        if (cameraView === 'FIRST_PERSON' || cameraView === 'FOLLOW') {
-            const event = new CustomEvent('player-input', { detail: { type: 'touch-tap', x: touchStart.x } });
-            window.dispatchEvent(event);
-        }
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-        if (gameState !== 'PLAYING' || cameraView === 'FIRST_PERSON' || cameraView === 'FOLLOW' || !touchStart || e.changedTouches.length === 0) return;
-        
-        const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
-        const event = new CustomEvent('player-input', { detail: { type: 'touch-swipe', start: touchStart, end: touchEnd } });
-        window.dispatchEvent(event);
-        touchStart = null;
-    };
+    // NO WINDOW-LEVEL TOUCH HANDLERS
+    // Mobile controls use OnScreenControls buttons which dispatch keyboard events
+    // This prevents duplicate events and accidental touches on 3D canvas
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [gameState, cameraView, speedLevels, setGameState, setSpeedIndex, setCameraView, setSpeedMessage, pauseMusic, resumeMusic]);
 

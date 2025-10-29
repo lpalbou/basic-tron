@@ -15,16 +15,7 @@ const ControlButton: React.FC<{
 }> = ({ onClick, className = '', children, ariaLabel }) => (
   <button
     onTouchStart={(e) => {
-      e.preventDefault(); // Prevent screen zoom and other default behaviors
-      onClick();
-    }}
-    // Handle click for desktop/mouse users (but not onMouseDown to avoid double-firing on mobile)
-    onClick={(e) => {
-      // Only handle click if it's not a touch event (to avoid double-firing on mobile)
-      if (e.detail === 0) { // detail === 0 indicates keyboard/programmatic click, not mouse
-        return;
-      }
-      e.preventDefault();
+      e.preventDefault(); // Prevent screen zoom and synthetic click events
       onClick();
     }}
     className={`flex items-center justify-center bg-gray-500 bg-opacity-30 rounded-full text-white font-bold border-2 border-cyan-400 border-opacity-50 active:bg-cyan-400 active:bg-opacity-50 backdrop-blur-sm transition-all duration-100 ${className}`}

@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2025-10-29
+
+### Added
+- Toggle button for on-screen controls visibility
+- Enhanced mobile D-pad with improved layout and spacing
+- Better trail proximity detection and visual effects
+- Enhanced AI behavior for power-up collection and collision avoidance
+
+### Changed
+- Improved mobile controls with device-specific layouts (phone vs tablet)
+- Enhanced game loop performance and collision detection accuracy
+- Better lighting setup with three-point photography-style lighting
+- Refined post-processing effects and visual quality
+
+### Fixed
+- Mobile control responsiveness and touch event handling
+- Trail collision detection now matches visual trail positions
+- Camera view-specific control layouts (FOLLOW/FIRST_PERSON vs THIRD_PERSON)
+
 ## [0.2.2] - 2025-10-28
 
 ### Added
