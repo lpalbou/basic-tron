@@ -245,6 +245,29 @@ We maintain a detailed [CHANGELOG.md](./CHANGELOG.md) to track all improvements 
 
 The version is managed centrally in `constants/version.ts` and displayed discreetly in the game's startup menu.
 
+## 🧠 **AI Development Insights**
+*Lessons learned from AI-assisted 3D graphics development*
+
+The integration of **3D bike models** and **advanced lighting systems** revealed important limitations in current AI development assistance. These insights highlight the balance between AI capabilities and domain expertise requirements.
+
+### **Technical Challenges Encountered**
+
+**🎨 Texture and Material Detection**  
+AI models struggled to identify critical issues in texture mapping, particularly with **normal maps** that appeared uniform and therefore provided no lighting response. The subtle nature of these visual artifacts requires deep understanding of PBR (Physically Based Rendering) workflows and proactive control of image assets.
+
+**⚡ WebGL Context Analysis**  
+When WebGL context loss occurred during power-up rendering, AI initially misdiagnosed this as a memory or rendering pipeline issue. The actual cause was isolated to specific UI components, demonstrating the importance of systematic debugging over automated inference.
+
+**🔧 Game Industry Best Practices**  
+AI tools missed established game development patterns, such as applying **team colors** to geometrically simpler areas of 3D models for better visual clarity and performance. 
+
+### **Development Reality**
+
+> 💡 **Key Insight:** AI excels at code generation and rapid prototyping, but complex 3D graphics debugging still requires deep technical knowledge of rendering pipelines, material systems, and industry-specific optimization techniques.
+
+**Time Investment**: Complex visual issues can require **several hours** of systematic investigation, even with AI assistance. Understanding concepts like **ambient occlusion (AO)**, **unlit vs lit material models**, and **light positioning** remains essential for effective problem-solving.
+
+
 ## Open Source & Contributions
 
 This project embraces open source development and community contributions. We believe in:
@@ -276,11 +299,4 @@ Contributions are welcome! Whether it's:
 Please check our [CHANGELOG.md](./CHANGELOG.md) for recent changes and [ROADMAP.md](./ROADMAP.md) for planned features.
 
 
-## Feedback on Vibe coding
 
-- models were unable to check the textures and detect a problem in normal maps (uniform, hence no effect of lights)
-- models were unable to infer that the webgl loss of context was only on the screen were showing the power up - it had no effect on memory or rendering, despite the models thinking it was the root cause
-- as illustrated by the vibe coding, if you do not know about various concepts (normal maps, ao, unlit vs lit models and positioning of lights), the model won't find the solution for you
-- tracking those errors can take several hours
-- models also missed insights from game industry that team color should be applied in area where the geometry is less complex
-- concept of light falloff was ignored
