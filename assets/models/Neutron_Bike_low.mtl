@@ -1,0 +1,47 @@
+# Enhanced MTL file for Neutron Bike with PBR textures
+# Generated for basic-tron project
+
+newmtl Driver_girlSG1
+illum 2
+Ka 0.00 0.00 0.00
+Kd 0.80 0.80 0.80
+Ks 0.50 0.50 0.50
+Ns 96.0
+Ni 1.00
+d 1.00
+map_Kd textures/neutron_Bike_Base_color.png
+map_Bump textures/neutron_Bike_Normal.png
+norm textures/neutron_Bike_Normal.png
+map_Ks textures/neutron_Bike_Metallic.png
+map_Ns textures/neutron_Bike_Roughness.png
+map_Ka textures/neutron_Bike_Mixed_AO.png
+
+newmtl blinn1SG
+illum 2
+Ka 0.00 0.00 0.00
+Kd 0.80 0.80 0.80
+Ks 0.50 0.50 0.50
+Ns 96.0
+Ni 1.00
+d 1.00
+map_Kd textures/neutron_Bike_Base_color.png
+map_Bump textures/neutron_Bike_Normal.png
+norm textures/neutron_Bike_Normal.png
+map_Ks textures/neutron_Bike_Metallic.png
+map_Ns textures/neutron_Bike_Roughness.png
+map_Ka textures/neutron_Bike_Mixed_AO.png
+
+newmtl initialShadingGroup
+illum 2
+Ka 0.00 0.00 0.00
+Kd 0.80 0.80 0.80
+Ks 0.50 0.50 0.50
+Ns 96.0
+Ni 1.00
+d 1.00
+map_Kd textures/neutron_Bike_Base_color.png
+map_Bump textures/neutron_Bike_Normal.png
+norm textures/neutron_Bike_Normal.png
+map_Ks textures/neutron_Bike_Metallic.png
+map_Ns textures/neutron_Bike_Roughness.png
+map_Ka textures/neutron_Bike_Mixed_AO.png
