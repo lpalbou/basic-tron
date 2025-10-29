@@ -1,8 +1,8 @@
 
 import React, { useRef, Suspense, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { EffectComposer, Bloom, Noise } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
+import { EffectComposer, Bloom, Noise, ToneMapping, Vignette } from '@react-three/postprocessing';
+import { BlendFunction, ToneMappingMode } from 'postprocessing';
 import { Vector3 } from 'three';
 import { Arena } from './Arena';
 import { LightCycle } from './LightCycle';
@@ -646,8 +646,31 @@ const Scene: React.FC<GameCanvasProps> = ({
 
       <ScreenshotHandler />
 
-      <EffectComposer>
-        <Bloom intensity={1.5} luminanceThreshold={0.25} luminanceSmoothing={0.9} height={1080} />
+      <EffectComposer multisampling={8}>
+        {/* AAA-Quality Filmic Tone Mapping for cinematic look */}
+        <ToneMapping
+          mode={ToneMappingMode.ACES_FILMIC}
+          exposure={1.2}
+          whitePoint={1.0}
+          adaptiveLuminance={false}
+        />
+
+        {/* Enhanced Bloom - Higher threshold for selective glow on neon lights only */}
+        <Bloom
+          intensity={2.2}
+          luminanceThreshold={0.6}
+          luminanceSmoothing={0.5}
+          height={1080}
+          mipmapBlur
+        />
+
+        {/* Subtle Vignette for focus and cinematic feel */}
+        <Vignette
+          offset={0.3}
+          darkness={0.5}
+          eskil={false}
+        />
+
         <Noise
           premultiply
           opacity={isInvincible ? 0.15 : 0}

@@ -118,26 +118,34 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
       }
     });
 
-    // OPTIMIZED for LIGHT RESPONSE: More reflective, better lighting interaction
-    // Strategy: Lower roughness = more glossy = better light reflections
-    const enhancedMat = new MeshStandardMaterial({
+    // AAA-QUALITY MATERIAL: Clearcoat for premium car-paint look
+    // Strategy: Double specular highlights = more realistic, premium appearance
+    const enhancedMat = new THREE.MeshPhysicalMaterial({
         // Base textures for surface properties
         map: baseColorTexture,
         metalnessMap: metallicTexture,
         roughnessMap: roughnessTexture,
         aoMap: aoTexture,
-        aoMapIntensity: 1.5, // Boosted from 1.2
+        aoMapIntensity: 1.5,
 
         // BRIGHTER base color for better light response
-        color: new THREE.Color(0xffffff), // Pure white for maximum brightness
+        color: new THREE.Color(0xffffff),
 
         // Strong emissive for glow on team areas
         emissive: new THREE.Color(player.current.color),
-        emissiveIntensity: 0.2, // Boosted from 0.15
+        emissiveIntensity: 0.2,
 
         // MORE REFLECTIVE - better light response
-        metalness: 0.9, // Increased from 0.8
-        roughness: 0.4, // MUCH LOWER from 1.0 - more glossy/reflective!
+        metalness: 0.9,
+        roughness: 0.4,
+
+        // AAA CLEARCOAT LAYER (like premium car paint)
+        clearcoat: 1.0, // Full clearcoat strength
+        clearcoatRoughness: 0.1, // Very glossy clearcoat (wet look)
+
+        // Enhanced light interaction
+        reflectivity: 1.0,
+        ior: 1.5, // Index of refraction (glass-like)
 
         // Rendering settings
         flatShading: false,
