@@ -17,7 +17,7 @@ export const ScreenshotButton: React.FC<ScreenshotButtonProps> = ({ gameState })
   }
 
   return (
-    <div className="absolute bottom-4 right-4 z-30">
+    <div className="absolute top-20 right-4 z-30">
       <button
         onClick={takeScreenshot}
         className="w-12 h-12 bg-gray-700 bg-opacity-40 rounded-full text-2xl flex items-center justify-center border-2 border-cyan-400 border-opacity-50 hover:bg-cyan-400 hover:bg-opacity-50 transition-colors backdrop-blur-sm"
