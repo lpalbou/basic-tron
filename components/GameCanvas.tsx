@@ -78,20 +78,6 @@ const calculateNextPos = (position: [number, number, number], direction: Directi
   return pos;
 };
 
-// Calculate front wheel position for trail emission point
-// The trail should start from the middle of the front wheel, not the bike center
-const FRONT_WHEEL_OFFSET = 1.0; // Distance from bike center to front wheel center (reduced from 2.0)
-const getFrontWheelPosition = (position: [number, number, number], direction: Direction): [number, number, number] => {
-  const pos: [number, number, number] = [...position];
-  switch (direction) {
-    case 'UP': pos[2] -= FRONT_WHEEL_OFFSET; break;
-    case 'DOWN': pos[2] += FRONT_WHEEL_OFFSET; break;
-    case 'LEFT': pos[0] -= FRONT_WHEEL_OFFSET; break;
-    case 'RIGHT': pos[0] += FRONT_WHEEL_OFFSET; break;
-  }
-  return pos;
-};
-
 const isSafe = (pos: [number, number, number], collision: Set<string>, player: Player): boolean => {
     const [x, , z] = pos;
     const halfGrid = GRID_SIZE / 2;
@@ -410,16 +396,16 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
     if (p1Moved && p1.isAlive) {
       collisionGrid.current.add(`${Math.round(p1.position[0])},${Math.round(p1.position[2])}`);
       p1.position = p1NextPos;
-      // Trail starts from front wheel, not bike center
-      const p1FrontWheelPos = getFrontWheelPosition(p1NextPos, p1.direction);
-      p1.path.push(p1FrontWheelPos);
+      // Trail uses bike CENTER for perfect orthogonal paths (Tron-style)
+      // Front wheel offset would create diagonal zigzags when turning
+      p1.path.push(p1NextPos);
     }
     if (p2Moved && p2.isAlive) {
       collisionGrid.current.add(`${Math.round(p2.position[0])},${Math.round(p2.position[2])}`);
       p2.position = p2NextPos;
-      // Trail starts from front wheel, not bike center
-      const p2FrontWheelPos = getFrontWheelPosition(p2NextPos, p2.direction);
-      p2.path.push(p2FrontWheelPos);
+      // Trail uses bike CENTER for perfect orthogonal paths (Tron-style)
+      // Front wheel offset would create diagonal zigzags when turning
+      p2.path.push(p2NextPos);
     }
   });
 

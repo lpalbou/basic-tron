@@ -6,6 +6,8 @@ import {
   TubeGeometry,
   Vector3,
   CatmullRomCurve3,
+  LineCurve3,
+  CurvePath,
   MeshStandardMaterial,
   CanvasTexture,
   type BufferGeometry,
@@ -104,25 +106,33 @@ export const Trail: React.FC<{ playerRef: React.MutableRefObject<Player> }> = ({
     // Only update the geometry if the path has grown and is long enough to form a tube.
     if (path.length > 1 && path.length !== lastPathLength.current) {
       meshRef.current.visible = true; // Ensure it's visible after a potential shrink
-      // Convert path array to Vector3 array for the curve
+
+      // Convert path array to Vector3 array
       const points = path.map(p => new Vector3(...p));
-      // Create a smooth curve through the points
-      const curve = new CatmullRomCurve3(points);
-      
-      // Create a new tube geometry from the curve
+
+      // Create a curve path with STRAIGHT LINE segments for Tron-style right angles
+      const curvePath = new CurvePath<Vector3>();
+      for (let i = 0; i < points.length - 1; i++) {
+        const lineCurve = new LineCurve3(points[i], points[i + 1]);
+        curvePath.add(lineCurve);
+      }
+
+      // Create a new tube geometry from the curve path
+      // CRITICAL: For linear segments, we need MANY more tubular segments (subdivisions along path)
+      // Each LineCurve3 needs enough subdivisions to create a smooth tube around the corners
       const newGeometry = new TubeGeometry(
-        curve,
-        path.length * 2, // Segments along the tube for smoothness
+        curvePath,
+        Math.max(path.length * 8, 64), // Much higher segment count for linear curves
         0.15, // Radius of the tube
         8, // Radial segments
         false // Not closed
       );
-      
+
       // Dispose of the old geometry to prevent memory leaks
       if (meshRef.current.geometry) {
         meshRef.current.geometry.dispose();
       }
-      
+
       // Assign the new geometry
       meshRef.current.geometry = newGeometry;
     }

@@ -23,16 +23,13 @@ export const POWERUP_SPEED_MULTIPLIER = 1.8; // A bit less than 2x for better co
 export const TRAIL_SHRINK_PERCENTAGE = 0.5; // Increased from 0.3 to 0.5
 export const EMP_FREEZE_DURATION = 2.5; // seconds
 
-// Front wheel offset for trail positioning (reduced from 2.0 to 1.0)
-const FRONT_WHEEL_OFFSET = 1.0;
-
 // Initial state for Player 1 (User).
 export const INITIAL_PLAYER_1_STATE: Player = {
   id: 1,
   position: [-Math.floor(HALF_GRID_SIZE / 2), 0.0, 0],
   direction: 'RIGHT',
-  // Path starts from front wheel (RIGHT direction = +X offset)
-  path: [[-Math.floor(HALF_GRID_SIZE / 2) + FRONT_WHEEL_OFFSET, 0.0, 0]],
+  // Path starts from bike CENTER for perfect orthogonal trails (Tron-style)
+  path: [[-Math.floor(HALF_GRID_SIZE / 2), 0.0, 0]],
   isAlive: true,
   color: PLAYER_1_COLOR,
   activePowerUp: { type: null, duration: 0 },
@@ -45,8 +42,8 @@ export const INITIAL_PLAYER_2_STATE: Player = {
   id: 2,
   position: [Math.floor(HALF_GRID_SIZE / 2), 0.0, 0],
   direction: 'LEFT',
-  // Path starts from front wheel (LEFT direction = -X offset)
-  path: [[Math.floor(HALF_GRID_SIZE / 2) - FRONT_WHEEL_OFFSET, 0.0, 0]],
+  // Path starts from bike CENTER for perfect orthogonal trails (Tron-style)
+  path: [[Math.floor(HALF_GRID_SIZE / 2), 0.0, 0]],
   isAlive: true,
   color: PLAYER_2_COLOR,
   activePowerUp: { type: null, duration: 0 },
