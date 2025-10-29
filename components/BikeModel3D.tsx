@@ -100,7 +100,10 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
         texture.wrapT = THREE.RepeatWrapping;
 
         // Resize large textures to prevent WebGL context loss (4096x4096 = 112MB VRAM for 7 textures!)
-        if (texture.image.width > 2048 || texture.image.height > 2048) {
+        const originalWidth = texture.image.width;
+        const originalHeight = texture.image.height;
+
+        if (originalWidth > 2048 || originalHeight > 2048) {
           // Create canvas for resizing
           const canvas = document.createElement('canvas');
           const maxSize = 2048; // Reduced from 4096
@@ -112,7 +115,7 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
             ctx.drawImage(texture.image, 0, 0, maxSize, maxSize);
             texture.image = canvas;
             texture.needsUpdate = true;
-            console.log(`Resized texture from ${texture.image.width}x${texture.image.height} to ${maxSize}x${maxSize} to save VRAM`);
+            console.log(`Resized texture from ${originalWidth}x${originalHeight} to ${maxSize}x${maxSize} to save VRAM`);
           }
         }
       }
@@ -126,17 +129,15 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
         normalScale: new Vector2(1.0, 1.0), // Normal mapping for surface detail
         metalnessMap: metallicTexture,
         roughnessMap: roughnessTexture,
-        aoMap: aoTexture,
-        aoMapIntensity: 1.0, // Full AO for depth
-        displacementMap: heightTexture,
-        displacementScale: 0.05,
+        // Removed aoMap - causes WebGL context loss (requires uv2 channel)
+        // Removed displacementMap - too expensive, causes context loss
 
         // Player-specific color - BALANCED with texture detail
         color: new THREE.Color(player.current.color), // Tints the base texture
         emissive: new THREE.Color(player.current.color),
         emissiveIntensity: 0.2, // Reduced for subtle glow that doesn't wash out detail
 
-        // SOTA PBR properties
+        // PBR properties optimized to prevent context loss
         metalness: 0.8, // Metallic but not overpowering
         roughness: 0.3, // Some roughness for texture variation
 
@@ -153,10 +154,11 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
       color: enhancedMat.color.getHexString(),
       emissive: enhancedMat.emissive.getHexString(),
       emissiveIntensity: enhancedMat.emissiveIntensity,
+      hasBaseMap: !!enhancedMat.map,
       hasNormalMap: !!enhancedMat.normalMap,
       hasMetalnessMap: !!enhancedMat.metalnessMap,
       hasRoughnessMap: !!enhancedMat.roughnessMap,
-      hasAOMap: !!enhancedMat.aoMap
+      textureCount: `${[enhancedMat.map, enhancedMat.normalMap, enhancedMat.metalnessMap, enhancedMat.roughnessMap].filter(t => t).length} textures`
     });
 
     return enhancedMat;
