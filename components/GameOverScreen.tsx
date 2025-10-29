@@ -56,7 +56,7 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ winner, scores, 
                     className={commonButtonClasses}
                     style={{ backgroundColor: winnerColor, boxShadow: `0 0 30px ${winnerColor}`, borderColor: winnerColor }}
                 >
-                    Play Again
+                    REMATERIALIZE
                 </button>
                 
                 <PowerUpLegend />

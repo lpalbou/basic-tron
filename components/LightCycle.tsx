@@ -31,12 +31,13 @@ export const LightCycle: React.FC<{ player: React.MutableRefObject<Player>; game
   const groupRef = useRef<Group>(null!);
   const lightRef = useRef<PointLight>(null!);
   const crashLightRef = useRef<PointLight>(null!);
-  
+
   // Rezzing state
   const isRezzing = useRef(false);
   const rezzStartTime = useRef(0);
+  const lastRezzGameState = useRef<GameState>('MENU'); // Track last state to prevent double-trigger
   const COUNTDOWN_DURATION = 2.0; // From App.tsx logic
-  
+
   // Derezzing state
   const isDerezzing = useRef(false);
   const wasAlive = useRef(player.current.isAlive);
@@ -65,11 +66,13 @@ export const LightCycle: React.FC<{ player: React.MutableRefObject<Player>; game
     const p = player.current;
 
     // --- Rezzing In Animation Trigger ---
-    if (gameState === 'COUNTDOWN' && !isRezzing.current) {
+    // Only trigger on STATE TRANSITION to COUNTDOWN (not while already in COUNTDOWN)
+    if (gameState === 'COUNTDOWN' && lastRezzGameState.current !== 'COUNTDOWN' && !isRezzing.current) {
         isRezzing.current = true;
         isDerezzing.current = false;
         rezzStartTime.current = state.clock.elapsedTime;
-        
+        lastRezzGameState.current = 'COUNTDOWN'; // Mark that we've handled this COUNTDOWN
+
         originalMaterials.current.clear();
         rezzMaterial.uniforms.uColor.value.set(p.color);
         groupRef.current.traverse((child) => {
@@ -79,6 +82,11 @@ export const LightCycle: React.FC<{ player: React.MutableRefObject<Player>; game
             }
         });
         groupRef.current.visible = true;
+    }
+
+    // Reset state tracker when leaving COUNTDOWN
+    if (gameState !== 'COUNTDOWN' && lastRezzGameState.current === 'COUNTDOWN') {
+        lastRezzGameState.current = gameState;
     }
 
     // --- Rezzing Animation Update ---

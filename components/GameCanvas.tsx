@@ -31,6 +31,7 @@ import { Shockwave } from './Shockwave';
 import { ScreenshotHandler } from './ScreenshotHandler';
 
 interface GameCanvasProps {
+  gameId: number; // Forces trail reset when game restarts
   onGameOver: (winner: number | null) => void;
   gameState: GameState;
   speedMultiplier: number;
@@ -406,11 +407,12 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
   return null;
 };
 
-const Scene: React.FC<GameCanvasProps> = ({ 
-    onGameOver, 
-    gameState, 
-    speedMultiplier, 
-    savedCameraState, 
+const Scene: React.FC<GameCanvasProps> = ({
+    gameId,
+    onGameOver,
+    gameState,
+    speedMultiplier,
+    savedCameraState,
     onCameraChange, 
     cameraView,
     sfx,
@@ -513,28 +515,29 @@ const Scene: React.FC<GameCanvasProps> = ({
 
   return (
     <>
-      {/* BOOSTED LIGHTING SYSTEM for Better Material Response */}
+      {/* PHOTOGRAPHY-STYLE LIGHTING - 10am Sun Angle (45°) */}
 
-      {/* Ambient light - BOOSTED for overall brightness */}
-      <ambientLight intensity={0.5} color="#ffffff" />
+      {/* Ambient light - Minimal, just to prevent pure black shadows */}
+      <ambientLight intensity={0.25} color="#ffffff" />
 
-      {/* Environment hemisphere light for realistic ambient - BOOSTED */}
+      {/* Environment hemisphere - Sky/ground ambient */}
       <hemisphereLight
-        intensity={0.8}
+        intensity={0.4}
         color="#87CEEB"
         groundColor="#1a1a2e"
       />
 
-      {/* Key Light - Primary directional light with high-quality shadows - BOOSTED */}
+      {/* KEY LIGHT (The "Sun" at 10am) - Front-Left, 45° elevation */}
+      {/* Position: Low Y (45° angle), creates dramatic diagonal shadows */}
       <directionalLight
-        position={[25, 30, 20]}
-        intensity={6.0}
-        color="#ffffff"
+        position={[40, 25, 30]}
+        intensity={8.0}
+        color="#FFF8E7"
         castShadow
         shadow-mapSize-width={4096}
         shadow-mapSize-height={4096}
         shadow-camera-near={0.1}
-        shadow-camera-far={100}
+        shadow-camera-far={120}
         shadow-camera-left={-60}
         shadow-camera-right={60}
         shadow-camera-top={60}
@@ -543,48 +546,21 @@ const Scene: React.FC<GameCanvasProps> = ({
         shadow-normalBias={0.02}
       />
 
-      {/* Fill Light - Lower and more direct for side visibility - BOOSTED */}
+      {/* FILL LIGHT - Opposite side, softer (1/3 key intensity) */}
+      {/* Fills in shadows, prevents them from being too dark */}
       <directionalLight
-        position={[-25, 8, 15]}
-        intensity={5.0}
-        color="#ffffff"
+        position={[-30, 15, 25]}
+        intensity={2.5}
+        color="#B0C4DE"
         castShadow={false}
       />
 
-      {/* Rim Light - Strong backlight for edge definition - BOOSTED */}
+      {/* RIM LIGHT - Behind and above, creates edge glow */}
+      {/* Separates bikes from background, adds depth */}
       <directionalLight
-        position={[0, 10, -30]}
-        intensity={5.0}
-        color="#FF6B35"
-        castShadow={false}
-      />
-
-      {/* Side accent lights for better side illumination - BOOSTED */}
-      <pointLight
-        position={[30, 3, 0]}
-        intensity={6.0}
-        color="#ffffff"
-        distance={50}
-        decay={1.5}
-        castShadow={false}
-      />
-
-      <pointLight
-        position={[-30, 3, 0]}
-        intensity={6.0}
-        color="#ffffff"
-        distance={50}
-        decay={1.5}
-        castShadow={false}
-      />
-
-      {/* Overhead accent for metallic reflections */}
-      <pointLight
-        position={[0, 25, 0]}
-        intensity={1.68}
-        color="#FFD700"
-        distance={50}
-        decay={2}
+        position={[-20, 20, -40]}
+        intensity={4.0}
+        color="#FF8C42"
         castShadow={false}
       />
       
@@ -615,13 +591,13 @@ const Scene: React.FC<GameCanvasProps> = ({
       />
       
       <LightCycle player={player1Ref} gameState={gameState} />
-      <Trail playerRef={player1Ref} />
+      <Trail key={`p1-trail-${gameId}`} playerRef={player1Ref} />
       <ParticleTrail playerRef={player1Ref} gameState={gameState} />
       <WallSparks playerRef={player1Ref} />
       <TrailSparks />
-      
+
       <LightCycle player={player2Ref} gameState={gameState} />
-      <Trail playerRef={player2Ref} />
+      <Trail key={`p2-trail-${gameId}`} playerRef={player2Ref} />
       <ParticleTrail playerRef={player2Ref} gameState={gameState} />
 
       {powerUps.map(p => (
