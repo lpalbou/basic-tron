@@ -513,22 +513,22 @@ const Scene: React.FC<GameCanvasProps> = ({
 
   return (
     <>
-      {/* SOTA PBR Lighting System for Enhanced 3D Rendering */}
-      
-      {/* Ambient light - increased for better side visibility */}
-      <ambientLight intensity={0.35} color="#ffffff" />
+      {/* BOOSTED LIGHTING SYSTEM for Better Material Response */}
 
-      {/* Environment hemisphere light for realistic ambient */}
+      {/* Ambient light - BOOSTED for overall brightness */}
+      <ambientLight intensity={0.5} color="#ffffff" />
+
+      {/* Environment hemisphere light for realistic ambient - BOOSTED */}
       <hemisphereLight
-        intensity={0.56}
+        intensity={0.8}
         color="#87CEEB"
         groundColor="#1a1a2e"
       />
 
-      {/* Key Light - Primary directional light with high-quality shadows */}
+      {/* Key Light - Primary directional light with high-quality shadows - BOOSTED */}
       <directionalLight
         position={[25, 30, 20]}
-        intensity={4.2}
+        intensity={6.0}
         color="#ffffff"
         castShadow
         shadow-mapSize-width={4096}
@@ -542,27 +542,27 @@ const Scene: React.FC<GameCanvasProps> = ({
         shadow-bias={-0.0001}
         shadow-normalBias={0.02}
       />
-      
-      {/* Fill Light - Lower and more direct for side visibility */}
+
+      {/* Fill Light - Lower and more direct for side visibility - BOOSTED */}
       <directionalLight
         position={[-25, 8, 15]}
-        intensity={3.5}
+        intensity={5.0}
         color="#ffffff"
         castShadow={false}
       />
 
-      {/* Rim Light - Strong backlight for edge definition */}
+      {/* Rim Light - Strong backlight for edge definition - BOOSTED */}
       <directionalLight
         position={[0, 10, -30]}
-        intensity={3.5}
+        intensity={5.0}
         color="#FF6B35"
         castShadow={false}
       />
 
-      {/* Side accent lights for better side illumination */}
+      {/* Side accent lights for better side illumination - BOOSTED */}
       <pointLight
         position={[30, 3, 0]}
-        intensity={4.2}
+        intensity={6.0}
         color="#ffffff"
         distance={50}
         decay={1.5}
@@ -571,7 +571,7 @@ const Scene: React.FC<GameCanvasProps> = ({
 
       <pointLight
         position={[-30, 3, 0]}
-        intensity={4.2}
+        intensity={6.0}
         color="#ffffff"
         distance={50}
         decay={1.5}

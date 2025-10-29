@@ -118,39 +118,36 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
       }
     });
 
-    // Create SOTA PBR material with AO-based team color masking
-    // Industry standard: Apply team color MORE in lit areas, LESS in shadows
-    // This preserves surface detail while maintaining team identification
+    // OPTIMIZED for LIGHT RESPONSE: More reflective, better lighting interaction
+    // Strategy: Lower roughness = more glossy = better light reflections
     const enhancedMat = new MeshStandardMaterial({
-        // PBR texture maps - neutral base texture
+        // Base textures for surface properties
         map: baseColorTexture,
         metalnessMap: metallicTexture,
         roughnessMap: roughnessTexture,
-
-        // Enable AO map for depth and as color mask
         aoMap: aoTexture,
-        aoMapIntensity: 1.5,
+        aoMapIntensity: 1.5, // Boosted from 1.2
 
-        // Slightly tinted base color for better team identification
-        color: new THREE.Color(player.current.color).multiplyScalar(0.4).addScalar(0.3), // 40% team color + 30% brightness
+        // BRIGHTER base color for better light response
+        color: new THREE.Color(0xffffff), // Pure white for maximum brightness
+
+        // Strong emissive for glow on team areas
         emissive: new THREE.Color(player.current.color),
-        emissiveIntensity: 0.08,
+        emissiveIntensity: 0.2, // Boosted from 0.15
 
-        // PBR properties
-        metalness: 0.85,
-        roughness: 0.35,
+        // MORE REFLECTIVE - better light response
+        metalness: 0.9, // Increased from 0.8
+        roughness: 0.4, // MUCH LOWER from 1.0 - more glossy/reflective!
 
-        // Advanced rendering settings
+        // Rendering settings
         flatShading: false,
         transparent: false,
-        opacity: 1.0,
-        alphaTest: 0,
         side: THREE.FrontSide,
         toneMapped: true
       });
 
-    // SOTA Game Industry Technique: Shader-based AO color masking
-    // Apply team color intelligently based on AO brightness
+    // METALLIC-BASED Team Coloring: Color ONLY the metallic areas (hubless wheels, silver trim)
+    // This matches the trail color logic and looks natural
     const teamColorUniform = { value: new THREE.Color(player.current.color) };
 
     enhancedMat.onBeforeCompile = (shader) => {
@@ -160,30 +157,65 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
       // Add uniform declaration to fragment shader
       shader.fragmentShader = 'uniform vec3 uTeamColor;\n' + shader.fragmentShader;
 
-      // Modify fragment shader to apply team color based on AO
-      // Insert after aomap_fragment where ambientOcclusion is calculated
+      // ROUGHNESS MAP CONTROLS TEAM COLORING + NEON GLOW
+      // WHITE in roughness map → TEAM COLOR + STRONG EMISSIVE (neon light)
+      // BLACK/GRAY in roughness map → PURE BLACK (not team colored)
+      // Result: Bikes are BLACK and BLUE or BLACK and RED with glowing neon accents
+      // IMPORTANT: Preserve AO map contribution for depth detail
       shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <aomap_fragment>',
+        '#include <color_fragment>',
         `
-        #include <aomap_fragment>
+        #include <color_fragment>
 
-        // SOTA team coloring: Blend team color based on AO brightness
-        // ambientOcclusion is now available (computed by aomap_fragment)
-        // Range: 0 (dark/shadow) to 1 (bright/lit)
+        // PRESERVE original color with AO for subtle detail only
+        vec3 originalColorWithAO = diffuseColor.rgb;
 
-        // Inverse AO: bright areas get MORE team color, dark areas stay neutral
-        float aoMask = ambientOcclusion; // 0=shadow, 1=lit
+        // Extract just AO factor (brightness) without killing the color
+        float aoFactor = (originalColorWithAO.r + originalColorWithAO.g + originalColorWithAO.b) / 3.0;
+        aoFactor = clamp(aoFactor * 1.5, 0.7, 1.0); // Boost and clamp to keep bright
 
-        // Apply team color tinting modulated by AO
-        vec3 teamTint = uTeamColor * 1.4; // Boosted for better visibility
-        float colorStrength = 0.85; // Increased from 0.5 for more visible team colors
+        // Read roughness map (WHITE = neon light areas, BLACK = pure black)
+        #ifdef USE_ROUGHNESSMAP
+          vec4 roughnessSample = texture2D(roughnessMap, vRoughnessMapUv);
+          float roughnessValue = roughnessSample.g; // 0.0=black, 1.0=white
+        #else
+          float roughnessValue = 0.5;
+        #endif
 
-        // Mix: shadows stay more neutral, lit surfaces get team color
+        // ADJUSTED: More permissive threshold to catch gray areas too
+        float teamMask = smoothstep(0.2, 0.6, roughnessValue);
+
+        // BRIGHTER black - not pure black, mid-gray for lighting to work
+        vec3 darkGray = vec3(0.15, 0.15, 0.15) * aoFactor;
+
+        // VERY BRIGHT team color - minimal AO darkening
+        vec3 teamColor = uTeamColor * 1.8 * aoFactor;
+
+        // RESULT: Dark gray base with bright team colors
         diffuseColor.rgb = mix(
-          diffuseColor.rgb, // Original color
-          diffuseColor.rgb * teamTint, // Team-tinted color
-          colorStrength * aoMask // Strength modulated by AO
+          darkGray,           // DARK areas = mid-gray (lights can affect)
+          teamColor,          // BRIGHT areas = BRIGHT team color
+          teamMask            // Roughness-based mask
         );
+        `
+      );
+
+      // BOOST EMISSIVE on neon light areas (white in roughness map)
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <emissivemap_fragment>',
+        `
+        #include <emissivemap_fragment>
+
+        // Read roughness map again for emissive boost
+        #ifdef USE_ROUGHNESSMAP
+          vec4 roughnessSampleEmissive = texture2D(roughnessMap, vRoughnessMapUv);
+          float neonMask = smoothstep(0.2, 0.6, roughnessSampleEmissive.g); // Match color threshold
+        #else
+          float neonMask = 0.0;
+        #endif
+
+        // BOOST emissive on neon light areas - make them GLOW bright!
+        totalEmissiveRadiance += uTeamColor * neonMask * 2.5; // 2.5x boost for strong neon glow
         `
       );
     };
@@ -286,23 +318,18 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
   useFrame(() => {
     if (!modelLoaded || !enhancedMaterial) return;
 
-    // Update base color tint
-    enhancedMaterial.color.set(
-      new THREE.Color(player.current.color).multiplyScalar(0.4).addScalar(0.3)
-    );
-
-    // Update shader uniform for team color (SOTA AO-based approach)
+    // Update shader uniform for team color (metallic-based approach)
     const teamColorUniform = (enhancedMaterial as any).teamColorUniform;
     if (teamColorUniform) {
       teamColorUniform.value.set(player.current.color);
     }
 
-    // Update emissive for subtle glow
+    // Update emissive for subtle glow on metallic areas
     enhancedMaterial.emissive.set(player.current.color);
 
     // Update emissive intensity based on power-up status - SUBTLE glow
     const powerUpActive = player.current.activePowerUp.type !== null && player.current.activePowerUp.type !== 'TRAIL_SHRINK';
-    enhancedMaterial.emissiveIntensity = powerUpActive ? 0.14 : 0.08; // Slightly increased
+    enhancedMaterial.emissiveIntensity = powerUpActive ? 0.12 : 0.06; // Reduced for cleaner look
   });
 
   return <group ref={modelRef} />;
