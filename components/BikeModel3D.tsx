@@ -61,33 +61,29 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
   const model = useLoader(OBJLoader, `${BASE_URL}assets/models/Neutron_Bike_low.obj`);
 
   // Load PBR textures for enhanced rendering
-  const [baseColorTexture, normalTexture, normalOpenGLTexture, metallicTexture, roughnessTexture, aoTexture, heightTexture] = useLoader(TextureLoader, [
+  // NOTE: Normal maps excluded - both neutron_Bike_Normal.png and neutron_Bike_Normal_OpenGL.png
+  // are nearly uniform/flat and provide no useful surface detail. Better to rely on geometry normals.
+  const [baseColorTexture, metallicTexture, roughnessTexture, aoTexture] = useLoader(TextureLoader, [
     `${BASE_URL}assets/models/textures/neutron_Bike_Base_color.png`,
-    `${BASE_URL}assets/models/textures/neutron_Bike_Normal.png`,
-    `${BASE_URL}assets/models/textures/neutron_Bike_Normal_OpenGL.png`,
     `${BASE_URL}assets/models/textures/neutron_Bike_Metallic.png`,
     `${BASE_URL}assets/models/textures/neutron_Bike_Roughness.png`,
-    `${BASE_URL}assets/models/textures/neutron_Bike_Mixed_AO.png`,
-    `${BASE_URL}assets/models/textures/neutron_Bike_Height.png`
+    `${BASE_URL}assets/models/textures/neutron_Bike_Mixed_AO.png`
   ]);
 
   // SOTA PBR Material Setup
   const enhancedMaterial = useMemo(() => {
-    console.log('=== SOTA 3D BIKE MODEL - MATERIAL SETUP ===');
+    console.log('=== ENHANCED 3D BIKE MODEL - MATERIAL SETUP (No Normal Maps) ===');
     console.log('Player Color:', player.current.color);
     console.log('PBR textures loaded:', {
       baseColor: baseColorTexture?.image ? `${baseColorTexture.image.width}x${baseColorTexture.image.height}` : 'FAILED',
-      normal: normalTexture?.image ? `${normalTexture.image.width}x${normalTexture.image.height}` : 'FAILED',
-      normalOpenGL: normalOpenGLTexture?.image ? `${normalOpenGLTexture.image.width}x${normalOpenGLTexture.image.height}` : 'FAILED',
       metallic: metallicTexture?.image ? `${metallicTexture.image.width}x${metallicTexture.image.height}` : 'FAILED',
       roughness: roughnessTexture?.image ? `${roughnessTexture.image.width}x${roughnessTexture.image.height}` : 'FAILED',
-      ao: aoTexture?.image ? `${aoTexture.image.width}x${aoTexture.image.height}` : 'FAILED',
-      height: heightTexture?.image ? `${heightTexture.image.width}x${heightTexture.image.height}` : 'FAILED'
+      ao: aoTexture?.image ? `${aoTexture.image.width}x${aoTexture.image.height}` : 'FAILED'
     });
     console.log('BASE_URL:', import.meta.env.BASE_URL);
 
     // Configure all textures with optimized settings
-    const allTextures = [baseColorTexture, normalTexture, normalOpenGLTexture, metallicTexture, roughnessTexture, aoTexture, heightTexture];
+    const allTextures = [baseColorTexture, metallicTexture, roughnessTexture, aoTexture];
     allTextures.forEach(texture => {
       if (texture && texture.image) {
         // Texture configuration optimized for performance
@@ -121,25 +117,26 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
       }
     });
 
-    // Create single SOTA PBR material (MTL loader doesn't work with base path)
+    // Create single ENHANCED PBR material with AO but no normal maps
+    // Normal maps were removed as both available textures were nearly uniform/flat
     const enhancedMat = new MeshStandardMaterial({
         // PBR texture maps - USE base color texture for detail, tinted with player color
         map: baseColorTexture, // Base texture for surface detail
-        normalMap: normalOpenGLTexture || normalTexture, // Prefer OpenGL normal map
-        normalScale: new Vector2(1.0, 1.0), // Normal mapping for surface detail
         metalnessMap: metallicTexture,
         roughnessMap: roughnessTexture,
-        // Removed aoMap - causes WebGL context loss (requires uv2 channel)
-        // Removed displacementMap - too expensive, causes context loss
 
-        // Player-specific color - BALANCED with texture detail
+        // Enable AO map for depth and realism - using standard UV channel
+        aoMap: aoTexture,
+        aoMapIntensity: 1.2, // Boosted for more visible depth effect
+
+        // Player-specific color - REDUCED emissive for better texture visibility
         color: new THREE.Color(player.current.color), // Tints the base texture
         emissive: new THREE.Color(player.current.color),
-        emissiveIntensity: 0.2, // Reduced for subtle glow that doesn't wash out detail
+        emissiveIntensity: 0.08, // Significantly reduced to show more texture detail
 
-        // PBR properties optimized to prevent context loss
-        metalness: 0.8, // Metallic but not overpowering
-        roughness: 0.3, // Some roughness for texture variation
+        // PBR properties optimized for visual quality
+        metalness: 0.9, // High metalness for futuristic bike look
+        roughness: 0.25, // Slightly smoother for better reflections
 
         // Advanced rendering settings
         flatShading: false,
@@ -154,15 +151,18 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
       color: enhancedMat.color.getHexString(),
       emissive: enhancedMat.emissive.getHexString(),
       emissiveIntensity: enhancedMat.emissiveIntensity,
+      metalness: enhancedMat.metalness,
+      roughness: enhancedMat.roughness,
       hasBaseMap: !!enhancedMat.map,
-      hasNormalMap: !!enhancedMat.normalMap,
+      hasAOMap: !!enhancedMat.aoMap,
+      aoMapIntensity: enhancedMat.aoMapIntensity,
       hasMetalnessMap: !!enhancedMat.metalnessMap,
       hasRoughnessMap: !!enhancedMat.roughnessMap,
-      textureCount: `${[enhancedMat.map, enhancedMat.normalMap, enhancedMat.metalnessMap, enhancedMat.roughnessMap].filter(t => t).length} textures`
+      textureCount: `${[enhancedMat.map, enhancedMat.aoMap, enhancedMat.metalnessMap, enhancedMat.roughnessMap].filter(t => t).length} textures`
     });
 
     return enhancedMat;
-  }, [baseColorTexture, normalTexture, normalOpenGLTexture, metallicTexture, roughnessTexture, aoTexture, heightTexture, player.current.color]);
+  }, [baseColorTexture, metallicTexture, roughnessTexture, aoTexture, player.current.color]);
 
   // Helper to add random attribute for derezz effects
   const addRandomAttribute = (geometry: any) => {
@@ -242,13 +242,13 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
   useFrame(() => {
     if (!modelLoaded || !enhancedMaterial) return;
 
-    // Update material with player-specific colors - BALANCED for texture visibility
+    // Update material with player-specific colors - OPTIMIZED for texture visibility
     enhancedMaterial.color.set(new THREE.Color(player.current.color)); // Tints the texture
     enhancedMaterial.emissive.set(player.current.color);
 
-    // Update emissive intensity based on power-up status - SUBTLE glow
+    // Update emissive intensity based on power-up status - VERY SUBTLE glow to show texture detail
     const powerUpActive = player.current.activePowerUp.type !== null && player.current.activePowerUp.type !== 'TRAIL_SHRINK';
-    enhancedMaterial.emissiveIntensity = powerUpActive ? 0.4 : 0.2; // Balanced glow
+    enhancedMaterial.emissiveIntensity = powerUpActive ? 0.15 : 0.08; // Reduced to prevent washing out
   });
 
   return <group ref={modelRef} />;
