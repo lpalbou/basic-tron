@@ -3,7 +3,6 @@ import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Group, Vector3, Vector2, TextureLoader, MeshStandardMaterial, Mesh, BufferAttribute } from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import type { Player, GameState } from '../types';
 import { ErrorBoundary } from './ErrorBoundary';
 
@@ -58,10 +57,7 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
   // Get base URL for asset paths (handles /basic-tron/ prefix)
   const BASE_URL = import.meta.env.BASE_URL;
 
-  // Load MTL materials first
-  const materials = useLoader(MTLLoader, `${BASE_URL}assets/models/Neutron_Bike_low.mtl`);
-
-  // Load OBJ model (materials will be applied manually)
+  // Load OBJ model (materials will be applied manually - MTL loader has path issues)
   const model = useLoader(OBJLoader, `${BASE_URL}assets/models/Neutron_Bike_low.obj`);
 
   // Load PBR textures for enhanced rendering
@@ -76,82 +72,95 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
   ]);
 
   // SOTA PBR Material Setup
-  const enhancedMaterials = useMemo(() => {
-    console.log('=== SOTA 3D BIKE MODEL ===');
-    console.log('MTL materials:', Object.keys(materials.materials));
+  const enhancedMaterial = useMemo(() => {
+    console.log('=== SOTA 3D BIKE MODEL - MATERIAL SETUP ===');
+    console.log('Player Color:', player.current.color);
     console.log('PBR textures loaded:', {
-      baseColor: baseColorTexture?.image?.width || 'missing',
-      normal: normalTexture?.image?.width || 'missing',
-      normalOpenGL: normalOpenGLTexture?.image?.width || 'missing',
-      metallic: metallicTexture?.image?.width || 'missing',
-      roughness: roughnessTexture?.image?.width || 'missing',
-      ao: aoTexture?.image?.width || 'missing',
-      height: heightTexture?.image?.width || 'missing'
+      baseColor: baseColorTexture?.image ? `${baseColorTexture.image.width}x${baseColorTexture.image.height}` : 'FAILED',
+      normal: normalTexture?.image ? `${normalTexture.image.width}x${normalTexture.image.height}` : 'FAILED',
+      normalOpenGL: normalOpenGLTexture?.image ? `${normalOpenGLTexture.image.width}x${normalOpenGLTexture.image.height}` : 'FAILED',
+      metallic: metallicTexture?.image ? `${metallicTexture.image.width}x${metallicTexture.image.height}` : 'FAILED',
+      roughness: roughnessTexture?.image ? `${roughnessTexture.image.width}x${roughnessTexture.image.height}` : 'FAILED',
+      ao: aoTexture?.image ? `${aoTexture.image.width}x${aoTexture.image.height}` : 'FAILED',
+      height: heightTexture?.image ? `${heightTexture.image.width}x${heightTexture.image.height}` : 'FAILED'
     });
+    console.log('BASE_URL:', import.meta.env.BASE_URL);
 
-    // Configure all textures with SOTA settings
+    // Configure all textures with optimized settings
     const allTextures = [baseColorTexture, normalTexture, normalOpenGLTexture, metallicTexture, roughnessTexture, aoTexture, heightTexture];
     allTextures.forEach(texture => {
-      if (texture) {
-        // SOTA texture configuration
+      if (texture && texture.image) {
+        // Texture configuration optimized for performance
         texture.flipY = false; // OBJ models use OpenGL convention
         texture.generateMipmaps = true;
         texture.minFilter = THREE.LinearMipmapLinearFilter;
         texture.magFilter = THREE.LinearFilter;
-        texture.anisotropy = 16; // Maximum anisotropy for crisp textures
+        texture.anisotropy = 8; // Reduced from 16 to save GPU memory
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
+
+        // Resize large textures to prevent WebGL context loss (4096x4096 = 112MB VRAM for 7 textures!)
+        if (texture.image.width > 2048 || texture.image.height > 2048) {
+          // Create canvas for resizing
+          const canvas = document.createElement('canvas');
+          const maxSize = 2048; // Reduced from 4096
+          canvas.width = maxSize;
+          canvas.height = maxSize;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(texture.image, 0, 0, maxSize, maxSize);
+            texture.image = canvas;
+            texture.needsUpdate = true;
+            console.log(`Resized texture from ${texture.image.width}x${texture.image.height} to ${maxSize}x${maxSize} to save VRAM`);
+          }
+        }
       }
     });
 
-    // Create enhanced materials for each MTL material
-    const enhancedMats = {};
-    
-    Object.keys(materials.materials).forEach(matName => {
-      const originalMat = materials.materials[matName];
-      
-      // Create SOTA PBR material
-      const enhancedMat = new MeshStandardMaterial({
-        // PBR texture maps
-        map: baseColorTexture,
+    // Create single SOTA PBR material (MTL loader doesn't work with base path)
+    const enhancedMat = new MeshStandardMaterial({
+        // PBR texture maps - USE base color texture for detail, tinted with player color
+        map: baseColorTexture, // Base texture for surface detail
         normalMap: normalOpenGLTexture || normalTexture, // Prefer OpenGL normal map
-        normalScale: new Vector2(2.0, 2.0), // Strong normal mapping
+        normalScale: new Vector2(1.0, 1.0), // Normal mapping for surface detail
         metalnessMap: metallicTexture,
         roughnessMap: roughnessTexture,
         aoMap: aoTexture,
-        aoMapIntensity: 1.5, // Enhanced AO
+        aoMapIntensity: 1.0, // Full AO for depth
         displacementMap: heightTexture,
-        displacementScale: 0.1,
-        
-        // Player-specific color tinting
-        color: new THREE.Color(player.current.color).multiplyScalar(0.7), // Darker for detail visibility
+        displacementScale: 0.05,
+
+        // Player-specific color - BALANCED with texture detail
+        color: new THREE.Color(player.current.color), // Tints the base texture
         emissive: new THREE.Color(player.current.color),
-        emissiveIntensity: 0.15,
-        
+        emissiveIntensity: 0.2, // Reduced for subtle glow that doesn't wash out detail
+
         // SOTA PBR properties
-        metalness: 0.8,
-        roughness: 0.25,
-        
+        metalness: 0.8, // Metallic but not overpowering
+        roughness: 0.3, // Some roughness for texture variation
+
         // Advanced rendering settings
         flatShading: false,
         transparent: false,
         opacity: 1.0,
         alphaTest: 0,
         side: THREE.FrontSide,
-        shadowSide: THREE.FrontSide,
-        toneMapped: true,
-        
-        // Enable all shadow types
-        castShadow: true,
-        receiveShadow: true
+        toneMapped: true
       });
-      
-      enhancedMats[matName] = enhancedMat;
-      console.log(`Enhanced material '${matName}' with PBR textures`);
+
+    console.log('Enhanced material created:', {
+      color: enhancedMat.color.getHexString(),
+      emissive: enhancedMat.emissive.getHexString(),
+      emissiveIntensity: enhancedMat.emissiveIntensity,
+      hasNormalMap: !!enhancedMat.normalMap,
+      hasMetalnessMap: !!enhancedMat.metalnessMap,
+      hasRoughnessMap: !!enhancedMat.roughnessMap,
+      hasAOMap: !!enhancedMat.aoMap
     });
 
-    return enhancedMats;
-  }, [materials, baseColorTexture, normalTexture, normalOpenGLTexture, metallicTexture, roughnessTexture, aoTexture, heightTexture, player.current.color]);
+    return enhancedMat;
+  }, [baseColorTexture, normalTexture, normalOpenGLTexture, metallicTexture, roughnessTexture, aoTexture, heightTexture, player.current.color]);
 
   // Helper to add random attribute for derezz effects
   const addRandomAttribute = (geometry: any) => {
@@ -167,39 +176,35 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
 
   // SOTA Model Setup with proper material assignment
   useEffect(() => {
-    if (!model || !modelRef.current || !enhancedMaterials) return;
+    if (!model || !modelRef.current || !enhancedMaterial) return;
 
     // Clone the model to avoid sharing between players
     const clonedModel = model.clone();
-    
+
     console.log('=== SOTA MODEL SETUP ===');
-    console.log('Processing model with enhanced PBR materials...');
-    
+    console.log('Processing model with enhanced PBR material...');
+
     // Process each mesh in the model
     clonedModel.traverse((child) => {
       if (child instanceof Mesh) {
         const geometry = child.geometry;
-        
+
         // Debug geometry attributes
         console.log('Mesh geometry attributes:', Object.keys(geometry.attributes));
         console.log('UV coordinates:', !!geometry.attributes.uv ? 'PRESENT' : 'MISSING');
         console.log('Normals:', !!geometry.attributes.normal ? 'PRESENT' : 'MISSING');
         console.log('Vertex count:', geometry.attributes.position?.count || 0);
-        
+
         // Ensure geometry is properly prepared for PBR rendering
         if (!geometry.attributes.normal) {
           console.log('Computing vertex normals...');
           geometry.computeVertexNormals();
         }
-        
-        // CRITICAL: Compute tangents for normal mapping
-        if (geometry.attributes.uv && geometry.attributes.normal) {
-          console.log('Computing tangent space for normal mapping...');
-          geometry.computeTangents();
-        } else {
-          console.warn('Cannot compute tangents - missing UV or normals!');
-        }
-        
+
+        // Note: computeTangents() requires indexed geometry, which OBJ loader doesn't always create
+        // Normal mapping will work without tangents (Three.js computes them in shader)
+        // Skipping tangent computation to avoid errors and GPU overhead
+
         // Verify model positioning
         geometry.computeBoundingBox();
         const box = geometry.boundingBox;
@@ -210,59 +215,38 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
           });
         }
 
-        // Apply the correct enhanced material based on original material name
-        const originalMaterial = child.material;
-        let materialName = 'blinn1SG'; // Default material
-        
-        if (originalMaterial && originalMaterial.name) {
-          materialName = originalMaterial.name;
-        }
-        
-        if (enhancedMaterials[materialName]) {
-          child.material = enhancedMaterials[materialName];
-          console.log(`Applied enhanced material '${materialName}' to mesh`);
-        } else {
-          // Fallback to first available enhanced material
-          const firstMaterial = Object.values(enhancedMaterials)[0];
-          if (firstMaterial) {
-            child.material = firstMaterial;
-            console.log(`Applied fallback enhanced material to mesh`);
-          }
-        }
-        
+        // Apply the enhanced material to ALL meshes
+        child.material = enhancedMaterial;
+        console.log('Applied enhanced material to mesh');
+
         // Enable shadows
         child.castShadow = true;
         child.receiveShadow = true;
-        
+
         // Add random attribute for derezz effects
         addRandomAttribute(geometry);
       }
     });
-    
+
     // Clear previous model and add new one
     modelRef.current.clear();
     modelRef.current.add(clonedModel);
-    
+
     setModelLoaded(true);
-    console.log('SOTA model setup complete with PBR materials!');
-  }, [model, enhancedMaterials]);
+    console.log('SOTA model setup complete with PBR material!');
+  }, [model, enhancedMaterial]);
 
   // Update material colors based on player state
   useFrame(() => {
-    if (!modelLoaded || !enhancedMaterials) return;
-    
-    // Update all enhanced materials with player-specific colors
-    Object.values(enhancedMaterials).forEach((material: any) => {
-      if (material) {
-        // Update player-specific colors
-        material.color.set(new THREE.Color(player.current.color).multiplyScalar(0.7));
-        material.emissive.set(player.current.color);
-        
-        // Update emissive intensity based on power-up status
-        const powerUpActive = player.current.activePowerUp.type !== null && player.current.activePowerUp.type !== 'TRAIL_SHRINK';
-        material.emissiveIntensity = powerUpActive ? 0.4 : 0.15;
-      }
-    });
+    if (!modelLoaded || !enhancedMaterial) return;
+
+    // Update material with player-specific colors - BALANCED for texture visibility
+    enhancedMaterial.color.set(new THREE.Color(player.current.color)); // Tints the texture
+    enhancedMaterial.emissive.set(player.current.color);
+
+    // Update emissive intensity based on power-up status - SUBTLE glow
+    const powerUpActive = player.current.activePowerUp.type !== null && player.current.activePowerUp.type !== 'TRAIL_SHRINK';
+    enhancedMaterial.emissiveIntensity = powerUpActive ? 0.4 : 0.2; // Balanced glow
   });
 
   return <group ref={modelRef} />;
