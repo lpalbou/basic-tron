@@ -274,3 +274,12 @@ Contributions are welcome! Whether it's:
 - Documentation enhancements
 
 Please check our [CHANGELOG.md](./CHANGELOG.md) for recent changes and [ROADMAP.md](./ROADMAP.md) for planned features.
+
+
+## Feedback on Vibe coding
+
+- models were unable to check the textures and detect a problem in normal maps (uniform, hence no effect of lights)
+- models were unable to infer that the webgl loss of context was only on the screen were showing the power up - it had no effect on memory or rendering, despite the models thinking it was the root cause
+- as illustrated by the vibe coding, if you do not know about various concepts (normal maps, ao, unlit vs lit models and positioning of lights), the model won't find the solution for you
+- tracking those errors can take several hours
+- models also missed insights from game industry that team color should be applied in area where the geometry is less complex

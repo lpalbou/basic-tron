@@ -87,7 +87,8 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
     allTextures.forEach(texture => {
       if (texture && texture.image) {
         // Texture configuration optimized for performance
-        texture.flipY = false; // OBJ models use OpenGL convention
+        // CRITICAL: flipY = true for correct UV mapping (this model uses standard UV orientation)
+        texture.flipY = true; // Fixed: was false, causing UV scrambling
         texture.generateMipmaps = true;
         texture.minFilter = THREE.LinearMipmapLinearFilter;
         texture.magFilter = THREE.LinearFilter;
@@ -117,26 +118,27 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
       }
     });
 
-    // Create single ENHANCED PBR material with AO but no normal maps
-    // Normal maps were removed as both available textures were nearly uniform/flat
+    // Create SOTA PBR material with AO-based team color masking
+    // Industry standard: Apply team color MORE in lit areas, LESS in shadows
+    // This preserves surface detail while maintaining team identification
     const enhancedMat = new MeshStandardMaterial({
-        // PBR texture maps - USE base color texture for detail, tinted with player color
-        map: baseColorTexture, // Base texture for surface detail
+        // PBR texture maps - neutral base texture
+        map: baseColorTexture,
         metalnessMap: metallicTexture,
         roughnessMap: roughnessTexture,
 
-        // Enable AO map for depth and realism - using standard UV channel
+        // Enable AO map for depth and as color mask
         aoMap: aoTexture,
-        aoMapIntensity: 1.2, // Boosted for more visible depth effect
+        aoMapIntensity: 1.5,
 
-        // Player-specific color - REDUCED emissive for better texture visibility
-        color: new THREE.Color(player.current.color), // Tints the base texture
+        // Slightly tinted base color for better team identification
+        color: new THREE.Color(player.current.color).multiplyScalar(0.4).addScalar(0.3), // 40% team color + 30% brightness
         emissive: new THREE.Color(player.current.color),
-        emissiveIntensity: 0.08, // Significantly reduced to show more texture detail
+        emissiveIntensity: 0.08,
 
-        // PBR properties optimized for visual quality
-        metalness: 0.9, // High metalness for futuristic bike look
-        roughness: 0.25, // Slightly smoother for better reflections
+        // PBR properties
+        metalness: 0.85,
+        roughness: 0.35,
 
         // Advanced rendering settings
         flatShading: false,
@@ -146,6 +148,48 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
         side: THREE.FrontSide,
         toneMapped: true
       });
+
+    // SOTA Game Industry Technique: Shader-based AO color masking
+    // Apply team color intelligently based on AO brightness
+    const teamColorUniform = { value: new THREE.Color(player.current.color) };
+
+    enhancedMat.onBeforeCompile = (shader) => {
+      // Inject team color uniform
+      shader.uniforms.uTeamColor = teamColorUniform;
+
+      // Add uniform declaration to fragment shader
+      shader.fragmentShader = 'uniform vec3 uTeamColor;\n' + shader.fragmentShader;
+
+      // Modify fragment shader to apply team color based on AO
+      // Insert after aomap_fragment where ambientOcclusion is calculated
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <aomap_fragment>',
+        `
+        #include <aomap_fragment>
+
+        // SOTA team coloring: Blend team color based on AO brightness
+        // ambientOcclusion is now available (computed by aomap_fragment)
+        // Range: 0 (dark/shadow) to 1 (bright/lit)
+
+        // Inverse AO: bright areas get MORE team color, dark areas stay neutral
+        float aoMask = ambientOcclusion; // 0=shadow, 1=lit
+
+        // Apply team color tinting modulated by AO
+        vec3 teamTint = uTeamColor * 1.4; // Boosted for better visibility
+        float colorStrength = 0.85; // Increased from 0.5 for more visible team colors
+
+        // Mix: shadows stay more neutral, lit surfaces get team color
+        diffuseColor.rgb = mix(
+          diffuseColor.rgb, // Original color
+          diffuseColor.rgb * teamTint, // Team-tinted color
+          colorStrength * aoMask // Strength modulated by AO
+        );
+        `
+      );
+    };
+
+    // Store uniform reference for updates
+    (enhancedMat as any).teamColorUniform = teamColorUniform;
 
     console.log('Enhanced material created:', {
       color: enhancedMat.color.getHexString(),
@@ -242,13 +286,23 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
   useFrame(() => {
     if (!modelLoaded || !enhancedMaterial) return;
 
-    // Update material with player-specific colors - OPTIMIZED for texture visibility
-    enhancedMaterial.color.set(new THREE.Color(player.current.color)); // Tints the texture
+    // Update base color tint
+    enhancedMaterial.color.set(
+      new THREE.Color(player.current.color).multiplyScalar(0.4).addScalar(0.3)
+    );
+
+    // Update shader uniform for team color (SOTA AO-based approach)
+    const teamColorUniform = (enhancedMaterial as any).teamColorUniform;
+    if (teamColorUniform) {
+      teamColorUniform.value.set(player.current.color);
+    }
+
+    // Update emissive for subtle glow
     enhancedMaterial.emissive.set(player.current.color);
 
-    // Update emissive intensity based on power-up status - VERY SUBTLE glow to show texture detail
+    // Update emissive intensity based on power-up status - SUBTLE glow
     const powerUpActive = player.current.activePowerUp.type !== null && player.current.activePowerUp.type !== 'TRAIL_SHRINK';
-    enhancedMaterial.emissiveIntensity = powerUpActive ? 0.15 : 0.08; // Reduced to prevent washing out
+    enhancedMaterial.emissiveIntensity = powerUpActive ? 0.14 : 0.08; // Slightly increased
   });
 
   return <group ref={modelRef} />;

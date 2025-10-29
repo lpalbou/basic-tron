@@ -35,7 +35,60 @@ const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' 
             controlsRef.current.target.fromArray(savedCameraState.target);
             controlsRef.current.update();
         }
-    }, []); 
+    }, []);
+
+    // Arrow key controls for precise camera movement
+    useEffect(() => {
+        if (!isPaused) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!controlsRef.current) return;
+
+            const panSpeed = 3.0; // Units per key press
+            const camera = controlsRef.current.object;
+            const target = controlsRef.current.target;
+
+            // Get camera's right and up vectors for proper panning
+            const cameraRight = new Vector3();
+            const cameraUp = new Vector3();
+            camera.getWorldDirection(cameraRight);
+            cameraRight.cross(camera.up).normalize();
+            camera.getWorldDirection(cameraUp);
+            cameraUp.crossVectors(cameraRight, cameraUp).normalize();
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    camera.position.addScaledVector(cameraRight, -panSpeed);
+                    target.addScaledVector(cameraRight, -panSpeed);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    camera.position.addScaledVector(cameraRight, panSpeed);
+                    target.addScaledVector(cameraRight, panSpeed);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    camera.position.addScaledVector(cameraUp, panSpeed);
+                    target.addScaledVector(cameraUp, panSpeed);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    camera.position.addScaledVector(cameraUp, -panSpeed);
+                    target.addScaledVector(cameraUp, -panSpeed);
+                    break;
+            }
+
+            controlsRef.current.update();
+            onCameraChange({
+                position: camera.position.toArray(),
+                target: target.toArray(),
+            });
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isPaused, onCameraChange]);
 
     const handleControlsChange = useCallback(() => {
         if (controlsRef.current) {
@@ -54,10 +107,10 @@ const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' 
           minPolarAngle={isPaused ? 0 : 0.1} // Allow full rotation when paused
           maxPolarAngle={isPaused ? Math.PI : Math.PI / 2 - 0.1}
           enablePan={isPaused} // Enable panning when paused
-          minDistance={isPaused ? 1 : 30} // Allow much closer zoom when paused
+          minDistance={isPaused ? 0.1 : 30} // Allow very close zoom when paused (was 1)
           maxDistance={isPaused ? 1000 : 150} // Allow much further zoom when paused
-          zoomSpeed={0.5}
-          panSpeed={1.0}
+          zoomSpeed={1.0} // Increased from 0.5 for faster zoom
+          panSpeed={2.0} // Increased from 1.0 for easier panning
           rotateSpeed={0.8}
           // Explicitly set mouse button mappings
           mouseButtons={{
@@ -65,6 +118,9 @@ const ThirdPersonCameraControls: React.FC<Omit<DynamicCameraProps, 'cameraView' 
             MIDDLE: MOUSE.DOLLY,  // MIDDLE mouse button for zoom
             RIGHT: MOUSE.PAN      // RIGHT mouse button for panning
           }}
+          // Improved settings for better touchpad/mouse compatibility
+          enableDamping={false} // Disable damping for more responsive controls
+          screenSpacePanning={true} // Pan in screen space (more intuitive)
         />
     );
 };

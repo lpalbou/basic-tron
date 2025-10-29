@@ -515,20 +515,20 @@ const Scene: React.FC<GameCanvasProps> = ({
     <>
       {/* SOTA PBR Lighting System for Enhanced 3D Rendering */}
       
-      {/* Ambient light - very low for dramatic PBR effect */}
-      <ambientLight intensity={0.05} color="#ffffff" />
-      
+      {/* Ambient light - increased for better side visibility */}
+      <ambientLight intensity={0.35} color="#ffffff" />
+
       {/* Environment hemisphere light for realistic ambient */}
-      <hemisphereLight 
-        intensity={0.2} 
-        color="#87CEEB" 
-        groundColor="#1a1a2e" 
+      <hemisphereLight
+        intensity={0.56}
+        color="#87CEEB"
+        groundColor="#1a1a2e"
       />
-      
+
       {/* Key Light - Primary directional light with high-quality shadows */}
       <directionalLight
         position={[25, 30, 20]}
-        intensity={3.0}
+        intensity={4.2}
         color="#ffffff"
         castShadow
         shadow-mapSize-width={4096}
@@ -543,45 +543,45 @@ const Scene: React.FC<GameCanvasProps> = ({
         shadow-normalBias={0.02}
       />
       
-      {/* Fill Light - Softer light from opposite side for detail visibility */}
+      {/* Fill Light - Lower and more direct for side visibility */}
       <directionalLight
-        position={[-20, 20, 15]}
-        intensity={1.2}
-        color="#4169E1"
+        position={[-25, 8, 15]}
+        intensity={3.5}
+        color="#ffffff"
         castShadow={false}
       />
-      
-      {/* Rim Light - Strong backlight for edge definition and PBR highlights */}
+
+      {/* Rim Light - Strong backlight for edge definition */}
       <directionalLight
-        position={[0, 15, -30]}
-        intensity={2.0}
+        position={[0, 10, -30]}
+        intensity={3.5}
         color="#FF6B35"
         castShadow={false}
       />
-      
-      {/* Side accent lights for enhanced normal map visibility */}
+
+      {/* Side accent lights for better side illumination */}
       <pointLight
-        position={[20, 10, 0]}
-        intensity={1.5}
-        color="#00CED1"
-        distance={40}
-        decay={2}
+        position={[30, 3, 0]}
+        intensity={4.2}
+        color="#ffffff"
+        distance={50}
+        decay={1.5}
         castShadow={false}
       />
-      
+
       <pointLight
-        position={[-20, 10, 0]}
-        intensity={1.2}
-        color="#FF1493"
-        distance={40}
-        decay={2}
+        position={[-30, 3, 0]}
+        intensity={4.2}
+        color="#ffffff"
+        distance={50}
+        decay={1.5}
         castShadow={false}
       />
-      
+
       {/* Overhead accent for metallic reflections */}
       <pointLight
         position={[0, 25, 0]}
-        intensity={0.8}
+        intensity={1.68}
         color="#FFD700"
         distance={50}
         decay={2}
