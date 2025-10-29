@@ -396,15 +396,18 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
 
     // --- Update Positions & Trails ---
     if (p1Moved && p1.isAlive) {
-      collisionGrid.current.add(`${Math.round(p1.position[0])},${Math.round(p1.position[2])}`);
+      // CRITICAL: Add NEW position to collision grid (matches trail visual)
+      // Previously added OLD position, causing phantom collisions 1 unit behind trails
       p1.position = p1NextPos;
+      collisionGrid.current.add(`${Math.round(p1NextPos[0])},${Math.round(p1NextPos[2])}`);
       // Trail uses bike CENTER for perfect orthogonal paths (Tron-style)
       // Front wheel offset would create diagonal zigzags when turning
       p1.path.push(p1NextPos);
     }
     if (p2Moved && p2.isAlive) {
-      collisionGrid.current.add(`${Math.round(p2.position[0])},${Math.round(p2.position[2])}`);
+      // CRITICAL: Add NEW position to collision grid (matches trail visual)
       p2.position = p2NextPos;
+      collisionGrid.current.add(`${Math.round(p2NextPos[0])},${Math.round(p2NextPos[2])}`);
       // Trail uses bike CENTER for perfect orthogonal paths (Tron-style)
       // Front wheel offset would create diagonal zigzags when turning
       p2.path.push(p2NextPos);
@@ -470,7 +473,16 @@ const Scene: React.FC<GameCanvasProps> = ({
           let turn: 'LEFT' | 'RIGHT' | null = null;
           if (key === 'arrowleft' || key === 'a') turn = 'LEFT';
           if (key === 'arrowright' || key === 'd') turn = 'RIGHT';
-          if (turn) p1.direction = getTurnedDirection(p1.direction, turn);
+          if (turn) {
+            const newDirection = getTurnedDirection(p1.direction, turn);
+            // CRITICAL: Prevent 180-degree U-turns (e.g., pressing LEFT twice: UP→LEFT→DOWN)
+            // This prevents instant self-collision when rapidly pressing the same turn key
+            const isOpposite = (p1.direction === 'UP' && newDirection === 'DOWN') ||
+                               (p1.direction === 'DOWN' && newDirection === 'UP') ||
+                               (p1.direction === 'LEFT' && newDirection === 'RIGHT') ||
+                               (p1.direction === 'RIGHT' && newDirection === 'LEFT');
+            if (!isOpposite) p1.direction = newDirection;
+          }
         } else { // THIRD_PERSON
           const keyMap: Record<string, Direction> = {
             'arrowup': 'UP', 'w': 'UP', 'arrowdown': 'DOWN', 's': 'DOWN',
@@ -488,7 +500,13 @@ const Scene: React.FC<GameCanvasProps> = ({
         handleKeyEvent(detail.key);
       } else if (detail.type === 'touch-tap') {
         const turn = detail.x < window.innerWidth / 2 ? 'LEFT' : 'RIGHT';
-        p1.direction = getTurnedDirection(p1.direction, turn);
+        const newDirection = getTurnedDirection(p1.direction, turn);
+        // CRITICAL: Prevent 180-degree U-turns from rapid taps
+        const isOpposite = (p1.direction === 'UP' && newDirection === 'DOWN') ||
+                           (p1.direction === 'DOWN' && newDirection === 'UP') ||
+                           (p1.direction === 'LEFT' && newDirection === 'RIGHT') ||
+                           (p1.direction === 'RIGHT' && newDirection === 'LEFT');
+        if (!isOpposite) p1.direction = newDirection;
       } else if (detail.type === 'touch-swipe') {
         const { start, end } = detail;
         const dx = end.x - start.x;
