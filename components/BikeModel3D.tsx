@@ -11,38 +11,38 @@ interface BikeModel3DProps {
   gameState: GameState;
 }
 
-// Fallback component with basic geometry (same as original)
+// Fallback component with basic geometry + 10% minimum brightness
 const FallbackBike: React.FC<BikeModel3DProps> = ({ player }) => {
   return (
     <>
       <mesh position={[0, 0.4, 0.1]}>
         <boxGeometry args={[2.1, 0.3, 4.2]} />
-        <meshStandardMaterial 
-          color={player.current.color} 
+        <meshStandardMaterial
+          color={new THREE.Color(0.1, 0.1, 0.1)}
           emissive={player.current.color}
-          emissiveIntensity={0.3}
-          metalness={0.9} 
-          roughness={0.1} 
+          emissiveIntensity={0.35}
+          metalness={0.9}
+          roughness={0.1}
         />
       </mesh>
       <mesh position={[0, 0.7, -2.0]} rotation={[0.4, 0, 0]}>
         <boxGeometry args={[2.1, 0.7, 0.7]} />
-        <meshStandardMaterial 
-          color={player.current.color}
+        <meshStandardMaterial
+          color={new THREE.Color(0.1, 0.1, 0.1)}
           emissive={player.current.color}
-          emissiveIntensity={0.3}
-          metalness={0.9} 
-          roughness={0.1} 
+          emissiveIntensity={0.35}
+          metalness={0.9}
+          roughness={0.1}
         />
       </mesh>
       <mesh position={[0, 0.7, 2.0]} rotation={[-0.2, 0, 0]}>
         <boxGeometry args={[2.1, 0.5, 0.8]} />
-        <meshStandardMaterial 
-          color={player.current.color}
+        <meshStandardMaterial
+          color={new THREE.Color(0.1, 0.1, 0.1)}
           emissive={player.current.color}
-          emissiveIntensity={0.3}
-          metalness={0.9} 
-          roughness={0.1} 
+          emissiveIntensity={0.35}
+          metalness={0.9}
+          roughness={0.1}
         />
       </mesh>
     </>
@@ -128,29 +128,29 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
         aoMap: aoTexture,
         aoMapIntensity: 1.5,
 
-        // BRIGHTER base color for better light response
-        color: new THREE.Color(0xffffff),
+        // Base color with 10% minimum brightness floor
+        color: new THREE.Color(0.1, 0.1, 0.1), // 10% gray minimum ensures visibility in all lighting
 
-        // Strong emissive for glow on team areas
+        // Strong emissive for glow on team areas + minimum brightness
         emissive: new THREE.Color(player.current.color),
-        emissiveIntensity: 0.2,
+        emissiveIntensity: 0.25, // Slightly increased for minimum visibility
 
-        // MORE REFLECTIVE - better light response
-        metalness: 0.9,
-        roughness: 0.4,
+        // MAXIMUM REFLECTIVITY - highly responsive to lateral lights
+        metalness: 1.0, // Full metallic response
+        roughness: 0.25, // Smoother = better light catch
 
         // AAA CLEARCOAT LAYER (like premium car paint)
         clearcoat: 1.0, // Full clearcoat strength
-        clearcoatRoughness: 0.1, // Very glossy clearcoat (wet look)
+        clearcoatRoughness: 0.05, // Ultra-glossy clearcoat for maximum light response
 
-        // Enhanced light interaction
+        // Maximum light interaction
         reflectivity: 1.0,
-        ior: 1.5, // Index of refraction (glass-like)
+        ior: 1.8, // Higher IOR = more dramatic light response
 
         // Rendering settings
         flatShading: false,
         transparent: false,
-        side: THREE.FrontSide,
+        side: THREE.DoubleSide, // Changed from FrontSide to test if normals are inverted
         toneMapped: true
       });
 
@@ -270,6 +270,10 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
     console.log('=== SOTA MODEL SETUP ===');
     console.log('Processing model with enhanced PBR material...');
 
+    // Track overall model bounds to align bottom with ground
+    let globalMinY = Infinity;
+    let globalMaxY = -Infinity;
+
     // Process each mesh in the model
     clonedModel.traverse((child) => {
       if (child instanceof Mesh) {
@@ -285,6 +289,24 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
         if (!geometry.attributes.normal) {
           console.log('Computing vertex normals...');
           geometry.computeVertexNormals();
+        } else {
+          // CRITICAL: Force recompute normals to ensure they're correct
+          console.log('Recomputing normals to ensure correctness...');
+          geometry.computeVertexNormals();
+        }
+
+        // DEBUG: Check normal direction by sampling a few
+        const normals = geometry.attributes.normal;
+        if (normals) {
+          console.log('=== NORMAL CHECK ===');
+          console.log('Sample normals (first 3 vertices):');
+          for (let i = 0; i < Math.min(3, normals.count); i++) {
+            const nx = normals.getX(i);
+            const ny = normals.getY(i);
+            const nz = normals.getZ(i);
+            const length = Math.sqrt(nx*nx + ny*ny + nz*nz);
+            console.log(`Vertex ${i}: [${nx.toFixed(3)}, ${ny.toFixed(3)}, ${nz.toFixed(3)}] length: ${length.toFixed(3)}`);
+          }
         }
 
         // Note: computeTangents() requires indexed geometry, which OBJ loader doesn't always create
@@ -295,10 +317,14 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
         geometry.computeBoundingBox();
         const box = geometry.boundingBox;
         if (box) {
-          console.log('Model bounds:', {
+          console.log('Mesh bounds:', {
             min: [box.min.x.toFixed(2), box.min.y.toFixed(2), box.min.z.toFixed(2)],
             max: [box.max.x.toFixed(2), box.max.y.toFixed(2), box.max.z.toFixed(2)]
           });
+
+          // Track global bounds across all meshes
+          globalMinY = Math.min(globalMinY, box.min.y);
+          globalMaxY = Math.max(globalMaxY, box.max.y);
         }
 
         // Apply the enhanced material to ALL meshes
@@ -313,6 +339,19 @@ const Model3D: React.FC<BikeModel3DProps> = ({ player, gameState }) => {
         addRandomAttribute(geometry);
       }
     });
+
+    // CRITICAL FIX: Align model's bottom with Y=0 so wheels touch the ground
+    // The OBJ model has its geometry starting above Y=0, causing floating
+    const verticalOffset = -globalMinY; // Negative of minimum Y to bring bottom to Y=0
+    clonedModel.position.y = verticalOffset;
+
+    console.log('=== MODEL GROUND ALIGNMENT ===');
+    console.log('Original model bounds Y:', {
+      min: globalMinY.toFixed(3),
+      max: globalMaxY.toFixed(3)
+    });
+    console.log('Applied vertical offset:', verticalOffset.toFixed(3));
+    console.log('Model bottom now at Y=0 (wheels touch ground)');
 
     // Clear previous model and add new one
     modelRef.current.clear();

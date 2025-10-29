@@ -283,3 +283,4 @@ Please check our [CHANGELOG.md](./CHANGELOG.md) for recent changes and [ROADMAP.
 - as illustrated by the vibe coding, if you do not know about various concepts (normal maps, ao, unlit vs lit models and positioning of lights), the model won't find the solution for you
 - tracking those errors can take several hours
 - models also missed insights from game industry that team color should be applied in area where the geometry is less complex
+- concept of light falloff was ignored

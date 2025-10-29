@@ -155,3 +155,8 @@ Phase 4: React Native + Networking + AI (Full Platform)
 ---
 
 *Last Updated: October 28, 2025 | Current Version: v0.2.0*
+
+
+Others:
+
+- fov in FPS : bigger

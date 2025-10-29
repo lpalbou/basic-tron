@@ -3,6 +3,7 @@ import React, { useRef, Suspense, useEffect, useState, useCallback } from 'react
 import { Canvas, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom, Noise, ToneMapping, Vignette } from '@react-three/postprocessing';
 import { BlendFunction, ToneMappingMode } from 'postprocessing';
+import * as THREE from 'three';
 import { Vector3 } from 'three';
 import { Arena } from './Arena';
 import { LightCycle } from './LightCycle';
@@ -73,6 +74,20 @@ const calculateNextPos = (position: [number, number, number], direction: Directi
     case 'DOWN': pos[2] += 1; break;
     case 'LEFT': pos[0] -= 1; break;
     case 'RIGHT': pos[0] += 1; break;
+  }
+  return pos;
+};
+
+// Calculate front wheel position for trail emission point
+// The trail should start from the middle of the front wheel, not the bike center
+const FRONT_WHEEL_OFFSET = 1.0; // Distance from bike center to front wheel center (reduced from 2.0)
+const getFrontWheelPosition = (position: [number, number, number], direction: Direction): [number, number, number] => {
+  const pos: [number, number, number] = [...position];
+  switch (direction) {
+    case 'UP': pos[2] -= FRONT_WHEEL_OFFSET; break;
+    case 'DOWN': pos[2] += FRONT_WHEEL_OFFSET; break;
+    case 'LEFT': pos[0] -= FRONT_WHEEL_OFFSET; break;
+    case 'RIGHT': pos[0] += FRONT_WHEEL_OFFSET; break;
   }
   return pos;
 };
@@ -395,12 +410,16 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
     if (p1Moved && p1.isAlive) {
       collisionGrid.current.add(`${Math.round(p1.position[0])},${Math.round(p1.position[2])}`);
       p1.position = p1NextPos;
-      p1.path.push(p1NextPos);
+      // Trail starts from front wheel, not bike center
+      const p1FrontWheelPos = getFrontWheelPosition(p1NextPos, p1.direction);
+      p1.path.push(p1FrontWheelPos);
     }
     if (p2Moved && p2.isAlive) {
       collisionGrid.current.add(`${Math.round(p2.position[0])},${Math.round(p2.position[2])}`);
       p2.position = p2NextPos;
-      p2.path.push(p2NextPos);
+      // Trail starts from front wheel, not bike center
+      const p2FrontWheelPos = getFrontWheelPosition(p2NextPos, p2.direction);
+      p2.path.push(p2FrontWheelPos);
     }
   });
 
@@ -413,12 +432,13 @@ const Scene: React.FC<GameCanvasProps> = ({
     gameState,
     speedMultiplier,
     savedCameraState,
-    onCameraChange, 
+    onCameraChange,
     cameraView,
     sfx,
     scores,
 }) => {
   const [powerUps, setPowerUps] = useState<PowerUpType[]>([]);
+
   const [shockwaves, setShockwaves] = useState<ShockwaveState[]>([]);
   const [isInvincible, setIsInvincible] = useState(false);
 
@@ -527,8 +547,7 @@ const Scene: React.FC<GameCanvasProps> = ({
         groundColor="#1a1a2e"
       />
 
-      {/* KEY LIGHT (The "Sun" at 10am) - Front-Left, 45° elevation */}
-      {/* Position: Low Y (45° angle), creates dramatic diagonal shadows */}
+      {/* KEY LIGHT (The "Sun") - Front-Left, 45° elevation */}
       <directionalLight
         position={[40, 25, 30]}
         intensity={8.0}
@@ -563,7 +582,7 @@ const Scene: React.FC<GameCanvasProps> = ({
         color="#FF8C42"
         castShadow={false}
       />
-      
+
       <Arena gridSize={GRID_SIZE} scores={scores} />
       
       {/* Enhanced ground plane for shadow reception */}
