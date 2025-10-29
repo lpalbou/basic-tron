@@ -294,8 +294,10 @@ const GameLoop: React.FC<GameLoopProps> = ({ player1Ref, player2Ref, onGameOver,
     if (p1.isAlive && p1.frozenFor <= 0 && p1TimeAccumulator.current >= p1TimeStep) { p1TimeAccumulator.current -= p1TimeStep; p1Moved = true; }
     if (p2.isAlive && p2.frozenFor <= 0 && p2TimeAccumulator.current >= p2TimeStep) { p2TimeAccumulator.current -= p2TimeStep; p2Moved = true; }
 
-    if (!p1Moved && !p2Moved) return;
-    
+    // REMOVED: Early return that caused "FPS drop" feeling at slow speeds
+    // The code below handles "no movement" cases properly with ternary operators
+    // if (!p1Moved && !p2Moved) return;
+
     const p1NextPos = p1Moved ? calculateNextPos(p1.position, p1.direction) : p1.position;
     const p2NextPos = p2Moved ? calculateNextPos(p2.position, p2.direction) : p2.position;
 
