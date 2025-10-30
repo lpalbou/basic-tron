@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2025-10-30
+
+### Fixed
+- Fixed mobile game over screen layout to fit within viewport without overflow
+- Reduced PowerUpLegend icon sizes (w-6 on mobile) and font sizes for compact display
+- Reduced PlayerStatus component sizes (w-24 on mobile) and typography scale
+- Adjusted GameOverScreen spacing (gap-2 on mobile) and button sizes for mobile
+- Centered game over screen content vertically with proper margin adjustment
+- Fixed grid rendering issue where right side appeared as continuous surface instead of grid lines
+- Removed infiniteGrid shader that caused rendering artifacts at certain viewing angles
+- Increased vertical separation between grid layers (from -0.015 to -0.02) to prevent z-fighting
+- Optimized grid fade settings (fadeDistance: 150, fadeStrength: 0.5) for consistent visibility
+
 ## [0.3.1] - 2025-10-29
 
 ### Changed

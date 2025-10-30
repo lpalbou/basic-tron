@@ -171,7 +171,7 @@ export const Arena: React.FC<{ gridSize: number; scores: { player1: number; play
 
     return (
     <>
-      {/* Main thicker grid */}
+      {/* Main thicker grid - removed infiniteGrid to fix rendering issues */}
       <Grid
         position={[0, -0.01, 0]}
         args={[gridSize, gridSize]}
@@ -181,13 +181,12 @@ export const Arena: React.FC<{ gridSize: number; scores: { player1: number; play
         sectionSize={5}
         sectionThickness={1.5}
         sectionColor="#00aaaa"
-        fadeDistance={100}
-        fadeStrength={1}
-        infiniteGrid
+        fadeDistance={150}
+        fadeStrength={0.5}
       />
-      {/* Secondary finer grid for added complexity */}
+      {/* Secondary finer grid for added complexity - increased separation to prevent z-fighting */}
       <Grid
-        position={[0, -0.015, 0]}
+        position={[0, -0.02, 0]}
         args={[gridSize, gridSize]}
         cellSize={0.25}
         cellThickness={0.5}
@@ -195,9 +194,8 @@ export const Arena: React.FC<{ gridSize: number; scores: { player1: number; play
         sectionSize={2.5}
         sectionThickness={1}
         sectionColor="#008080"
-        fadeDistance={120}
-        fadeStrength={1}
-        infiniteGrid
+        fadeDistance={150}
+        fadeStrength={0.5}
       />
       {/* Pulsating floor plane */}
       <PulsatingFloor size={gridSize} />
