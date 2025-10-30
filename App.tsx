@@ -188,7 +188,7 @@ const App: React.FC = () => {
       )}
       <ScreenshotButton gameState={gameState} />
       <PauseControls gameState={gameState} cameraView={cameraView} deviceType={deviceType} />
-      <div className="absolute top-4 left-4 z-30">
+      <div className="absolute top-4 left-0 z-30">
         <button
           onClick={() => setShowControls(s => !s)}
           className="w-12 h-12 bg-gray-700 bg-opacity-40 rounded-full text-2xl flex items-center justify-center border-2 border-gray-500 hover:bg-gray-600 transition-colors backdrop-blur-sm"

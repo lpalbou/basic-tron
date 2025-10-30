@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2025-10-29
+
+### Changed
+- Improved mobile menu screen layout to fit viewport without scrolling
+- Balanced button sizing for prominence while maintaining full-screen visibility
+- Tightened vertical spacing and gaps for better mobile viewport utilization
+- Adjusted typography scale for comfortable mobile reading
+- Refined power-up icon sizes for touch-friendliness without overwhelming the layout
+
 ## [0.3.0] - 2025-10-29
 
 ### Added

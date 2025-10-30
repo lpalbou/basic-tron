@@ -2,7 +2,7 @@ import React from 'react';
 import { PowerUpLegend } from './PowerUpLegend';
 import { PLAYER_1_COLOR, PLAYER_2_COLOR } from '../constants';
 
-const commonButtonClasses = "px-4 sm:px-6 md:px-8 py-2 md:py-3 text-lg sm:text-xl md:text-2xl font-black uppercase rounded-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 text-black";
+const commonButtonClasses = "px-3 sm:px-5 md:px-8 py-1.5 sm:py-2 md:py-3 text-base sm:text-lg md:text-xl font-black uppercase rounded-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 text-black";
 
 interface GameOverScreenProps {
     winner: number | null;
@@ -16,15 +16,15 @@ const PlayerStatus: React.FC<{
     color: string;
     isWinner: boolean;
 }> = ({ name, score, color, isWinner }) => (
-    <div className="flex flex-col items-center text-center w-36 sm:w-48" style={{ color: color, textShadow: `0 0 15px ${color}` }}>
-        <span className="text-2xl sm:text-4xl md:text-5xl font-black">{name}</span>
-        <span className="text-5xl sm:text-7xl md:text-8xl font-black my-1 sm:my-2">{score}</span>
+    <div className="flex flex-col items-center text-center w-24 sm:w-40 md:w-48" style={{ color: color, textShadow: `0 0 15px ${color}` }}>
+        <span className="text-lg sm:text-3xl md:text-4xl font-black">{name}</span>
+        <span className="text-4xl sm:text-6xl md:text-7xl font-black my-0.5 sm:my-1 md:my-2">{score}</span>
         {isWinner && (
-            <div className="flex flex-col items-center gap-1">
-                <h2 className="text-2xl sm:text-4xl md:text-5xl font-serif font-bold tracking-wider" style={{ textShadow: `0 0 8px ${color}, 0 0 20px ${color}`}}>
+            <div className="flex flex-col items-center gap-0.5 sm:gap-1">
+                <h2 className="text-lg sm:text-3xl md:text-4xl font-serif font-bold tracking-wider" style={{ textShadow: `0 0 8px ${color}, 0 0 20px ${color}`}}>
                     WINS!
                 </h2>
-                <div className="h-1 w-20 sm:w-28" style={{ background: color, boxShadow: `0 0 15px ${color}` }}></div>
+                <div className="h-0.5 sm:h-1 w-16 sm:w-24 md:w-28" style={{ background: color, boxShadow: `0 0 15px ${color}` }}></div>
             </div>
         )}
     </div>
@@ -39,14 +39,14 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ winner, scores, 
     const winnerColor = userWon ? PLAYER_1_COLOR : (aiWon ? PLAYER_2_COLOR : PLAYER_1_COLOR);
 
     return (
-        <div className="relative w-full h-full flex flex-col sm:flex-row items-center justify-around p-2 sm:p-4 gap-4">
+        <div className="relative w-full h-full flex flex-col sm:flex-row items-center justify-center sm:justify-around p-1 sm:p-3 md:p-4 gap-2 sm:gap-3 md:gap-4">
             {/* Player 1 Status */}
             <PlayerStatus name="USER" score={scores.player1} color={PLAYER_1_COLOR} isWinner={userWon} />
 
             {/* Central Content */}
-            <div className="flex flex-col items-center justify-center gap-4 sm:gap-6 order-first sm:order-none">
+            <div className="flex flex-col items-center justify-center gap-2 sm:gap-4 md:gap-6 order-first sm:order-none -mt-4 sm:mt-0">
                 {isDraw && (
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold tracking-wider text-white" style={{ textShadow: '0 0 10px rgba(255, 255, 255, 0.7)'}}>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold tracking-wider text-white" style={{ textShadow: '0 0 10px rgba(255, 255, 255, 0.7)'}}>
                         IT'S A DRAW!
                     </h2>
                 )}
@@ -58,7 +58,7 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ winner, scores, 
                 >
                     REMATERIALIZE
                 </button>
-                
+
                 <PowerUpLegend />
             </div>
 

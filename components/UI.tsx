@@ -28,10 +28,10 @@ export const UI: React.FC<UIProps> = ({ gameState, winner, onStart, scores }) =>
   }
   
   return (
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black bg-opacity-70 p-1 sm:p-4 backdrop-blur-md">
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black bg-opacity-70 sm:p-4 backdrop-blur-md">
       {gameState === 'MENU' && <MenuScreen onStart={onStart} />}
       {gameState === 'GAME_OVER' && <GameOverScreen winner={winner} scores={scores} onStart={onStart} />}
-      
+
       {/* Version footer - only show on menu */}
       {gameState === 'MENU' && (
         <div className="absolute bottom-4 right-4 text-xs text-gray-400 opacity-60">
