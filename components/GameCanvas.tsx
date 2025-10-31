@@ -8,6 +8,7 @@ import { Vector3 } from 'three';
 import { Arena } from './Arena';
 import { LightCycle } from './LightCycle';
 import { Trail } from './Trail';
+import { ProceduralStarField } from './ProceduralStarField';
 import type { Player, Direction, GameState, CameraState, PowerUp as PowerUpType, CameraView, SfxControls } from '../types';
 import { 
   INITIAL_PLAYER_1_STATE, 
@@ -42,6 +43,9 @@ interface GameCanvasProps {
   sfx: SfxControls;
   scores: { player1: number; player2: number };
   showGrid?: boolean;
+  starFieldEnabled?: boolean;
+  starFieldIntensity?: number;
+  deviceType?: 'phone' | 'tablet' | 'desktop';
 }
 
 interface ShockwaveState {
@@ -428,7 +432,10 @@ const Scene: React.FC<GameCanvasProps> = ({
     cameraView,
     sfx,
     scores,
-    showGrid = true
+    showGrid = true,
+    starFieldEnabled = true,
+    starFieldIntensity = 0.3,
+    deviceType = 'desktop'
 }) => {
   const [powerUps, setPowerUps] = useState<PowerUpType[]>([]);
 
@@ -575,6 +582,20 @@ const Scene: React.FC<GameCanvasProps> = ({
         castShadow={false}
       />
 
+      {/* Procedural Star Field - Rendered first for proper depth ordering */}
+      <ProceduralStarField 
+        config={{
+          starCount: deviceType === 'phone' ? 800 : deviceType === 'tablet' ? 1200 : 1500,
+          fadeDistance: 1200,
+          brightness: 1.0,
+          color: '#00ffff',
+          twinkleSpeed: 0.5,
+          enabled: starFieldEnabled,
+          intensity: starFieldIntensity
+        }}
+        deviceType={deviceType}
+      />
+      
       <Arena gridSize={GRID_SIZE} scores={scores} showGrid={showGrid} />
       
       {/* Pure digital space - no ground plane needed */}

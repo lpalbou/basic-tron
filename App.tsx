@@ -51,6 +51,17 @@ const App: React.FC = () => {
     return saved !== null ? JSON.parse(saved) : true; // Default to visible
   });
 
+  // Star field settings with localStorage persistence
+  const [starFieldEnabled, setStarFieldEnabled] = React.useState(() => {
+    const saved = localStorage.getItem('tron-starfield-enabled');
+    return saved !== null ? JSON.parse(saved) : true; // Default enabled
+  });
+  
+  const [starFieldIntensity, setStarFieldIntensity] = React.useState(() => {
+    const saved = localStorage.getItem('tron-starfield-intensity');
+    return saved !== null ? parseFloat(saved) : 0.3; // Default subtle
+  });
+
   React.useEffect(() => {
     const updateDevice = () => setDeviceType(getDeviceType());
     updateDevice();
@@ -68,6 +79,15 @@ const App: React.FC = () => {
   React.useEffect(() => {
     localStorage.setItem('tron-show-grid', JSON.stringify(showGrid));
   }, [showGrid]);
+
+  // Persist star field settings
+  React.useEffect(() => {
+    localStorage.setItem('tron-starfield-enabled', JSON.stringify(starFieldEnabled));
+  }, [starFieldEnabled]);
+
+  React.useEffect(() => {
+    localStorage.setItem('tron-starfield-intensity', JSON.stringify(starFieldIntensity));
+  }, [starFieldIntensity]);
 
   const startGame = React. useCallback(async () => {
     await playBackgroundMusic();
@@ -116,6 +136,39 @@ const App: React.FC = () => {
         return;
       }
 
+      // --- Grid Toggle (G key - works in all states) ---
+      if (key === 'g') {
+        console.log('Toggling grid from:', showGrid, 'to:', !showGrid);
+        setShowGrid(prev => !prev);
+        return;
+      }
+
+      // --- Star Field Toggle (S key - works in all states) ---
+      if (key === 's' && !e.shiftKey) {
+        console.log('Toggling star field from:', starFieldEnabled, 'to:', !starFieldEnabled);
+        setStarFieldEnabled(prev => !prev);
+        return;
+      }
+
+      // --- Star Field Intensity (Shift+S - cycle through levels) ---
+      if (key === 's' && e.shiftKey) {
+        setStarFieldIntensity(prev => {
+          const levels = [0, 0.2, 0.4, 0.6, 0.8]; // Off, Low, Medium, High, Ultra
+          const currentIndex = levels.findIndex(level => Math.abs(level - prev) < 0.1);
+          const nextIndex = (currentIndex + 1) % levels.length;
+          const newLevel = levels[nextIndex];
+          
+          console.log('Cycling star intensity from:', prev, 'to:', newLevel);
+          
+          // Auto-enable if setting to non-zero
+          if (newLevel > 0) setStarFieldEnabled(true);
+          if (newLevel === 0) setStarFieldEnabled(false);
+          
+          return newLevel;
+        });
+        return;
+      }
+
       // --- Player Movement Controls (only dispatched when playing) ---
       if (gameState === 'PLAYING') {
         const event = new CustomEvent('player-input', { detail: { type: 'keyboard', key } });
@@ -132,7 +185,7 @@ const App: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [gameState, cameraView, speedLevels, setGameState, setSpeedIndex, setCameraView, setSpeedMessage, pauseMusic, resumeMusic]);
+  }, [gameState, cameraView, speedLevels, setGameState, setSpeedIndex, setCameraView, setSpeedMessage, pauseMusic, resumeMusic, showGrid, starFieldEnabled, starFieldIntensity, setShowGrid, setStarFieldEnabled, setStarFieldIntensity]);
 
 
   React.useEffect(() => {
@@ -190,6 +243,9 @@ const App: React.FC = () => {
           sfx={sfx}
           scores={scores}
           showGrid={showGrid}
+          starFieldEnabled={starFieldEnabled}
+          starFieldIntensity={starFieldIntensity}
+          deviceType={deviceType}
         />
       )}
       {showControls && (gameState === 'PLAYING' || gameState === 'COUNTDOWN' || gameState === 'PAUSED') && (

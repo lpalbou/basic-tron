@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] - 2025-10-31
+
+### Added
+- Optional procedural stars for enhanced visual depth
+- Simplified grid line rendering for cleaner game appearance
+
+### Changed
+- Improved visual clarity with refined grid and star effects
+
 ## [0.3.2] - 2025-10-30
 
 ### Fixed
