@@ -41,6 +41,7 @@ interface GameCanvasProps {
   cameraView: CameraView;
   sfx: SfxControls;
   scores: { player1: number; player2: number };
+  showGrid?: boolean;
 }
 
 interface ShockwaveState {
@@ -427,6 +428,7 @@ const Scene: React.FC<GameCanvasProps> = ({
     cameraView,
     sfx,
     scores,
+    showGrid = true
 }) => {
   const [powerUps, setPowerUps] = useState<PowerUpType[]>([]);
 
@@ -573,17 +575,9 @@ const Scene: React.FC<GameCanvasProps> = ({
         castShadow={false}
       />
 
-      <Arena gridSize={GRID_SIZE} scores={scores} />
+      <Arena gridSize={GRID_SIZE} scores={scores} showGrid={showGrid} />
       
-      {/* Enhanced ground plane for shadow reception */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
-        <planeGeometry args={[200, 200]} />
-        <meshStandardMaterial 
-          color="#0a0a0a" 
-          roughness={0.8}
-          metalness={0.1}
-        />
-      </mesh>
+      {/* Pure digital space - no ground plane needed */}
       
       <DistantData />
       

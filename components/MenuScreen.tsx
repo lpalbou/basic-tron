@@ -18,6 +18,7 @@ const Controls: React.FC<{ onStart: () => void }> = ({ onStart }) => (
             </div>
         </div>
         <p className="text-gray-400 text-xs sm:text-sm md:text-base mt-1 sm:mt-3">Press 'X' to Change Speed</p>
+        <p className="text-gray-400 text-xs sm:text-sm md:text-base mt-0.5 sm:mt-1">Press 'G' to Toggle Grid Lines</p>
         <p className="text-gray-400 text-xs sm:text-sm md:text-base mt-0.5 sm:mt-1 animate-pulse">Use Mouse/Touch to Orbit Camera</p>
 
         {/* Start button integrated below controls */}

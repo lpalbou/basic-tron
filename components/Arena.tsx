@@ -4,6 +4,37 @@ import { Grid, Text } from '@react-three/drei';
 import { CanvasTexture, MeshStandardMaterial, RepeatWrapping, AdditiveBlending, type Material } from 'three';
 import { PLAYER_1_COLOR, PLAYER_2_COLOR } from '../constants';
 
+interface EnhancedGridProps {
+  gridSize: number;
+  visible: boolean;
+}
+
+const EnhancedTronGrid: React.FC<EnhancedGridProps> = ({ gridSize, visible }) => {
+    const gridRef = useRef<any>(null);
+    
+    if (!visible) return null;
+    
+    return (
+        <>
+            {/* Pure Digital Grid - Clean Tron Aesthetic */}
+            <Grid
+                ref={gridRef}
+                position={[0, 0, 0]}   // Exactly at ground level
+                args={[gridSize * 1.2, gridSize * 1.2]}
+                cellSize={2}           // Clean cell spacing
+                cellThickness={0.8}    // Crisp, visible lines
+                cellColor="#004444"    // Subtle cyan for spatial reference
+                sectionSize={8}        // Refined major grid spacing
+                sectionThickness={1.4} // Clean, prominent major lines
+                sectionColor="#0088aa" // Clear but not harsh teal
+                fadeDistance={120}     // Crisp perspective fade
+                fadeStrength={0.5}     // Maintains visibility at distance
+                infiniteGrid={false}
+            />
+        </>
+    );
+};
+
 // Create a scanline texture programmatically
 const createScanlineTexture = () => {
     const canvas = document.createElement('canvas');
@@ -77,31 +108,6 @@ const Wall: React.FC<{ position: [number, number, number]; rotation: [number, nu
     );
 };
 
-const PulsatingFloor: React.FC<{ size: number }> = ({ size }) => {
-    const materialRef = useRef<MeshStandardMaterial>(null!);
-    
-    useFrame(({ clock }) => {
-        if (materialRef.current) {
-            // A slow, gentle pulse using a sine wave
-            const pulse = (Math.sin(clock.getElapsedTime() * 0.5) + 1) / 2; // Maps to a 0-1 range
-            // Modulate emissiveIntensity for the glowing effect
-            materialRef.current.emissiveIntensity = 0.1 + pulse * 0.3; // Ranges from 0.1 to 0.4
-        }
-    });
-
-    return (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-            <planeGeometry args={[size, size]} />
-            <meshStandardMaterial
-                ref={materialRef}
-                color="#002525" // A dark cyan/teal that fits the theme
-                emissive="#00aaaa"
-                emissiveIntensity={0.1}
-                toneMapped={false}
-            />
-        </mesh>
-    );
-};
 
 const HolographicScoreboard: React.FC<{ scores: { player1: number, player2: number }; gridSize: number }> = ({ scores, gridSize }) => {
     const halfGrid = gridSize / 2;
@@ -165,40 +171,16 @@ const HolographicScoreboard: React.FC<{ scores: { player1: number, player2: numb
     );
 };
 
-export const Arena: React.FC<{ gridSize: number; scores: { player1: number; player2: number } }> = ({ gridSize, scores }) => {
+export const Arena: React.FC<{ gridSize: number; scores: { player1: number; player2: number }; showGrid?: boolean }> = ({ gridSize, scores, showGrid = true }) => {
     const halfGrid = gridSize / 2;
     const wallHeight = 5;
 
     return (
     <>
-      {/* Main thicker grid - removed infiniteGrid to fix rendering issues */}
-      <Grid
-        position={[0, -0.01, 0]}
-        args={[gridSize, gridSize]}
-        cellSize={1}
-        cellThickness={1}
-        cellColor="#111"
-        sectionSize={5}
-        sectionThickness={1.5}
-        sectionColor="#00aaaa"
-        fadeDistance={150}
-        fadeStrength={0.5}
-      />
-      {/* Secondary finer grid for added complexity - increased separation to prevent z-fighting */}
-      <Grid
-        position={[0, -0.02, 0]}
-        args={[gridSize, gridSize]}
-        cellSize={0.25}
-        cellThickness={0.5}
-        cellColor="#004040"
-        sectionSize={2.5}
-        sectionThickness={1}
-        sectionColor="#008080"
-        fadeDistance={150}
-        fadeStrength={0.5}
-      />
-      {/* Pulsating floor plane */}
-      <PulsatingFloor size={gridSize} />
+      {/* Atmospheric Tron Grid - Single Layer */}
+      <EnhancedTronGrid gridSize={gridSize} visible={showGrid} />
+      
+      {/* No floor needed - pure digital space */}
       {/* Holographic Scoreboard */}
       <HolographicScoreboard scores={scores} gridSize={gridSize} />
       {/* Arena Walls */}

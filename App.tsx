@@ -44,6 +44,12 @@ const App: React.FC = () => {
   const { playBackgroundMusic, pauseMusic, resumeMusic } = useSounds();
   const sfx = useSoundEffects();
   const [showControls, setShowControls] = React.useState(false);
+  
+  // Grid visibility toggle with localStorage persistence
+  const [showGrid, setShowGrid] = React.useState(() => {
+    const saved = localStorage.getItem('tron-show-grid');
+    return saved !== null ? JSON.parse(saved) : true; // Default to visible
+  });
 
   React.useEffect(() => {
     const updateDevice = () => setDeviceType(getDeviceType());
@@ -57,6 +63,11 @@ const App: React.FC = () => {
   React.useEffect(() => {
     setShowControls(isTouchDevice);
   }, [isTouchDevice]);
+
+  // Persist grid visibility setting
+  React.useEffect(() => {
+    localStorage.setItem('tron-show-grid', JSON.stringify(showGrid));
+  }, [showGrid]);
 
   const startGame = React. useCallback(async () => {
     await playBackgroundMusic();
@@ -178,6 +189,7 @@ const App: React.FC = () => {
           cameraView={cameraView}
           sfx={sfx}
           scores={scores}
+          showGrid={showGrid}
         />
       )}
       {showControls && (gameState === 'PLAYING' || gameState === 'COUNTDOWN' || gameState === 'PAUSED') && (
