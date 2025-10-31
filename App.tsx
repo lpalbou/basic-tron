@@ -12,6 +12,7 @@ import { SpeedIndicator } from './components/SpeedIndicator';
 import { PauseButton } from './components/PauseButton';
 import { ScreenshotButton } from './components/ScreenshotButton';
 import { PauseControls } from './components/PauseControls';
+import { SkyboxType, SKYBOX_CYCLE_ORDER, getSkyboxDisplayName } from './components/SkyboxManager';
 
 const getDeviceType = (): DeviceType => {
     const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -62,6 +63,14 @@ const App: React.FC = () => {
     return saved !== null ? parseFloat(saved) : 0.3; // Default subtle
   });
 
+  // Skybox settings with localStorage persistence (default: off to maintain Tron aesthetic)
+  const [skyboxType, setSkyboxType] = React.useState<SkyboxType>(() => {
+    const saved = localStorage.getItem('tron-skybox-type');
+    return (saved !== null ? saved : 'off') as SkyboxType;
+  });
+  
+  const [skyboxMessage, setSkyboxMessage] = React.useState<{text: string, key: number} | null>(null);
+
   React.useEffect(() => {
     const updateDevice = () => setDeviceType(getDeviceType());
     updateDevice();
@@ -88,6 +97,11 @@ const App: React.FC = () => {
   React.useEffect(() => {
     localStorage.setItem('tron-starfield-intensity', JSON.stringify(starFieldIntensity));
   }, [starFieldIntensity]);
+
+  // Persist skybox settings
+  React.useEffect(() => {
+    localStorage.setItem('tron-skybox-type', skyboxType);
+  }, [skyboxType]);
 
   const startGame = React. useCallback(async () => {
     await playBackgroundMusic();
@@ -169,6 +183,25 @@ const App: React.FC = () => {
         return;
       }
 
+      // --- Skybox Toggle (B key - cycle through skybox options) ---
+      if (key === 'b') {
+        setSkyboxType(prev => {
+          const currentIndex = SKYBOX_CYCLE_ORDER.indexOf(prev);
+          const nextIndex = (currentIndex + 1) % SKYBOX_CYCLE_ORDER.length;
+          const newType = SKYBOX_CYCLE_ORDER[nextIndex];
+          
+          console.log('Cycling skybox from:', prev, 'to:', newType);
+          
+          setSkyboxMessage({ 
+            text: getSkyboxDisplayName(newType), 
+            key: Date.now() 
+          });
+          
+          return newType;
+        });
+        return;
+      }
+
       // --- Player Movement Controls (only dispatched when playing) ---
       if (gameState === 'PLAYING') {
         const event = new CustomEvent('player-input', { detail: { type: 'keyboard', key } });
@@ -231,6 +264,7 @@ const App: React.FC = () => {
         scores={scores} 
       />
       {speedMessage && <SpeedIndicator message={speedMessage.text} messageKey={speedMessage.key} />}
+      {skyboxMessage && <SpeedIndicator message={skyboxMessage.text} messageKey={skyboxMessage.key} />}
       {gameState !== 'MENU' && (
         <GameCanvas
           gameId={gameId}
@@ -245,6 +279,7 @@ const App: React.FC = () => {
           showGrid={showGrid}
           starFieldEnabled={starFieldEnabled}
           starFieldIntensity={starFieldIntensity}
+          skyboxType={skyboxType}
           deviceType={deviceType}
         />
       )}

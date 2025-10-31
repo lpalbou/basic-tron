@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 ## [0.3.3] - 2025-10-31
 
 ### Added
-- Optional procedural stars for enhanced visual depth
-- Simplified grid line rendering for cleaner game appearance
+- Optional procedural star field for enhanced visual depth and atmosphere
+- Device-adaptive star count optimization (800 phone, 1200 tablet, 1500 desktop)
+- Subtle star twinkle animation with configurable intensity
 
 ### Changed
 - Improved visual clarity with refined grid and star effects
+- Enhanced background aesthetics while maintaining game performance
+
+### Technical
+- Efficient point cloud rendering for star field with minimal performance impact
+- Integrated star field settings with existing visual controls
 
 ## [0.3.2] - 2025-10-30
 

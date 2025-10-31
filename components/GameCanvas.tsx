@@ -9,6 +9,7 @@ import { Arena } from './Arena';
 import { LightCycle } from './LightCycle';
 import { Trail } from './Trail';
 import { ProceduralStarField } from './ProceduralStarField';
+import { SkyboxManager, SkyboxType } from './SkyboxManager';
 import type { Player, Direction, GameState, CameraState, PowerUp as PowerUpType, CameraView, SfxControls } from '../types';
 import { 
   INITIAL_PLAYER_1_STATE, 
@@ -45,6 +46,7 @@ interface GameCanvasProps {
   showGrid?: boolean;
   starFieldEnabled?: boolean;
   starFieldIntensity?: number;
+  skyboxType?: SkyboxType;
   deviceType?: 'phone' | 'tablet' | 'desktop';
 }
 
@@ -435,6 +437,7 @@ const Scene: React.FC<GameCanvasProps> = ({
     showGrid = true,
     starFieldEnabled = true,
     starFieldIntensity = 0.3,
+    skyboxType = 'off',
     deviceType = 'desktop'
 }) => {
   const [powerUps, setPowerUps] = useState<PowerUpType[]>([]);
@@ -582,7 +585,14 @@ const Scene: React.FC<GameCanvasProps> = ({
         castShadow={false}
       />
 
-      {/* Procedural Star Field - Rendered first for proper depth ordering */}
+      {/* Optional Skybox - Rendered first as background */}
+      <SkyboxManager 
+        skyboxType={skyboxType}
+        deviceType={deviceType}
+        intensity={0.8}
+      />
+
+      {/* Procedural Star Field - Rendered after skybox for proper layering */}
       <ProceduralStarField 
         config={{
           starCount: deviceType === 'phone' ? 800 : deviceType === 'tablet' ? 1200 : 1500,

@@ -14,3 +14,6 @@ public/*
 **/public/
 
 tmp/
+# Large skybox files
+assets/skybox/uploads_files_5527277_Free+Galaxies+8k.hdr
+assets/skybox/uploads_files_5527562_Free+HDRI+8k.hdr
